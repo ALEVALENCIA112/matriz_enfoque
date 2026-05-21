@@ -8,7 +8,8 @@ class BuJoSymbol(Enum):
     # --- Nomenclatura Clásica BuJo ---
     TASK_PENDING = "•"         # Tarea pendiente
     TASK_COMPLETED = "X"       # Tarea completada
-    TASK_MIGRATED = ">"        # Tarea migrada / pospuesta
+    TASK_MIGRATED = ">"        # Tarea migrada / pospuesta (al dia siguiente)
+    SCHEDULED_TASK = "<"       # Tarea Programada (Futura / Calendario)
     NOTE = "-"                 # Nota / Pensamiento rápido
     EVENT = "O"                # Evento / Fecha límite
     PRIORITY = "*"             # Prioridad (Significador clásico)

@@ -83,18 +83,19 @@ class DesktopGUI:
         capture_frame.pack(fill="x", padx=20, pady=5)
         
         ttk.Label(capture_frame, text="Nueva Entrada:").pack(side="left", padx=5)
-        self.ent_task_title = ttk.Entry(capture_frame, font=("Segoe UI", 11), width=45)
+        self.ent_task_title = ttk.Entry(capture_frame, font=("Segoe UI", 11), width=30)
         self.ent_task_title.pack(side="left", padx=5, fill="x", expand=True)
         
         # Dropdown para elegir la nomenclatura exacta
         ttk.Label(capture_frame, text="Símbolo:").pack(side="left", padx=5)
-        self.cmb_symbol = ttk.Combobox(capture_frame, state="readonly", width=18, font=("Segoe UI", 10))
+        self.cmb_symbol = ttk.Combobox(capture_frame, state="readonly", width=30, font=("Segoe UI", 10))
 
         # Mapeo manual y amigable para el cerebro en Español de Ecuador
         bujo_traducciones = {
             BuJoSymbol.TASK_PENDING: "•  Tarea Pendiente",
             BuJoSymbol.TASK_COMPLETED: "X  Tarea Realizada",
-            BuJoSymbol.TASK_MIGRATED: ">  Tarea Pospuesta",
+            BuJoSymbol.TASK_MIGRATED: ">  Tarea Pospuesta (siguiente día)",
+            BuJoSymbol.SCHEDULED_TASK: "<  Tarea Programada (Calendario)",
             BuJoSymbol.NOTE: "—  Nota o Pensamiento",
             BuJoSymbol.EVENT: "O  Evento / Fecha Límite",
             BuJoSymbol.PRIORITY: "*  Prioridad Alta",

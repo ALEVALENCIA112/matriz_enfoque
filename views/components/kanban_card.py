@@ -33,6 +33,10 @@ class KanbanCard(tk.Frame):
             lbl_color = self.colors["accent_d"]
             font_weight = "bold"
 
+        elif self.task.symbol == BuJoSymbol.SCHEDULED_TASK:
+            lbl_color = "#3498DB"  # Un azul/celeste vivo (combina con la paleta)
+            font_weight = "normal" # Mantener grosor normal para no competir con el visto '✓'
+
         # 2. Configuración de los significadores contextuales clásicos (* y !)
         prefix = f" {self.task.symbol.value} "
         if self.task.is_starred: 
