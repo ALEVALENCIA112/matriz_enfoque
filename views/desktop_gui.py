@@ -1,4 +1,5 @@
 # views/desktop_gui.py
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox
 from core.entities import KanbanColumn, BuJoSymbol
@@ -22,6 +23,17 @@ class DesktopGUI:
         self.root.geometry("1100x750")
         self.root.minsize(900, 600)
         
+        try:
+            # Calculamos la ruta absoluta hacia la carpeta assets
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            icon_path = os.path.join(base_dir, "assets", "app_icon.ico")
+            
+            # Asignamos el icono a la barra de título de la ventana
+            self.root.iconbitmap(icon_path)
+        except Exception as e:
+            # Si por alguna razón borras el archivo, el programa no se caerá
+            print(f"⚠️ No se pudo cargar el icono de la aplicación: {e}")
+
         # Paleta de colores sutiles para evitar la sobreestimulación visual
         self.colors = {
             "bg": "#F4F6F9",
