@@ -41,13 +41,15 @@ class MatrizEnfoqueMobileApp:
                 ft.dropdown.Option(BuJoSymbol.TASK_PENDING.value, "• Tarea"),
                 ft.dropdown.Option(BuJoSymbol.NOTE.value, "— Nota"),
                 ft.dropdown.Option(BuJoSymbol.EVENT.value, "○ Evento"),
-                ft.dropdown.Option(BuJoSymbol.SCHEDULED_TASK.value, "< Prog"),
-                ft.dropdown.Option(BuJoSymbol.TASK_MIGRATED.value, "> Migr"),
-                ft.dropdown.Option(BuJoSymbol.TASK_COMPLETED.value, "X Hech"),
+                ft.dropdown.Option(BuJoSymbol.SCHEDULED_TASK.value, "< Programada"),
+                ft.dropdown.Option(BuJoSymbol.TASK_MIGRATED.value, "> Migrada"),
+                ft.dropdown.Option(BuJoSymbol.TASK_COMPLETED.value, "X Hecho"),
+                ft.dropdown.Option(BuJoSymbol.PRIORITY.value, "* Prioridad Alta"),
+                ft.dropdown.Option(BuJoSymbol.INSPIRATION.value, "! Inspiración / Idea"),
                 # Extensiones Neurodivergentes
                 ft.dropdown.Option(BuJoSymbol.KEY_ACTIVITY.value, "✓ Clave"),
-                ft.dropdown.Option(BuJoSymbol.AVOIDED_ACTIVITY.value, "// Evit"),
-                ft.dropdown.Option(BuJoSymbol.DECISION.value, "D Decis"),
+                ft.dropdown.Option(BuJoSymbol.AVOIDED_ACTIVITY.value, "// Evitado"),
+                ft.dropdown.Option(BuJoSymbol.DECISION.value, "D Decisión"),
             ],
             value=BuJoSymbol.TASK_PENDING.value  
         )
@@ -61,6 +63,9 @@ class MatrizEnfoqueMobileApp:
         # ⏰ HILO DE FONDO CONTROLADO PARA EL RELOJ POMODORO
         self.clock_running = True
         self.page.run_task(self._mobile_clock_loop)
+
+        # Construir y montar la UI físicamente en la página
+        self.build_ui()
 
     def build_ui(self):
         """Dibuja de forma nativa los componentes móviles en pantalla."""

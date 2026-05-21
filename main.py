@@ -1,36 +1,35 @@
 # main.py
 import sys
-from infrastructure.cloud_storage import FirebaseTaskRepository
 from core.use_cases import KanbanManager
 from controllers.main_controller import MainController
+from views.desktop_gui import DesktopGUI
+# En tus puntos de entrada (main.py y main_mobile.py):
+from infrastructure.cloud_storage import LocalFirstTaskRepository
 
 def main():
     print("Iniciando la Matriz de Enfoque Elástico con Sincronización en la Nube...")
 
-    if sys.platform == "win32":
-        import ctypes
-        myappid = "mi.suite.tdah.matrizenfoque.1.0"  # Un ID único inventado
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-
-    # 💡 CONFIGURACIÓN DE FIREBASE:
-    # Reemplaza esta URL con la URL exacta de tu Realtime Database de Firebase
     FIREBASE_URL = "https://matriz-enfoque-default-rtdb.firebaseio.com/"
 
+
     # 2. Inyectamos la Infraestructura de la Nube en lugar de la Local
-    repository = FirebaseTaskRepository(database_url=FIREBASE_URL, user_id="ALEVALENCIA112")
+    repository = LocalFirstTaskRepository(database_url=FIREBASE_URL,
+                                        user_id="ALEVALENCIA112", 
+                                        local_filepath="matriz_datos.json"
+    )
 
     # 3. Inicializar el Core de Negocio inyectando su dependencia (SOLID - DIP)
-    kanban_manager = KanbanManager(repository=repository)
+    kanban_manager = KanbanManager(repository)
 
     # 4. Inicializar el Controlador y entregarle el control del motor de negocio
-    controller = MainController(kanban_manager=kanban_manager)
+    controller = MainController(kanban_manager)
 
     # 5. Lanzamiento de la interfaz de usuario (MVC)
     try:
         # Aquí importaremos la vista de escritorio en el siguiente paso
         from views.desktop_gui import DesktopGUI
         
-        app = DesktopGUI(controller=controller)
+        app = DesktopGUI(controller)
         app.run()
         
     except ImportError:
