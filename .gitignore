@@ -1,0 +1,44 @@
+# --- IDEs y Editores (VS Code) ---
+.vscode/
+.history/
+*.code-workspace
+.ionide/
+
+# --- Python Base ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.elc
+.Python
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- Entornos Virtuales ---
+.env
+.venv
+venv/
+ENV/
+env/
+
+# --- PyInstaller (Compilación PC) ---
+*.manifest
+*.spec
+
+# --- Flet / Flutter / Dart (Compilación Móvil) ---
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+architecture_mobile.zip
+app/app.zip
+**/*.apk
+**/*.aab
+
+# --- Archivos del Sistema ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini

@@ -1,7 +1,6 @@
 # views_mobile/mobile_app.py
 import flet as ft
-import threading
-import time
+import asyncio
 from core.entities import KanbanColumn, BuJoSymbol
 
 
@@ -24,7 +23,7 @@ class MatrizEnfoqueMobileApp:
         self.progress_list = ft.ListView(expand=True, spacing=10, padding=10)
         self.done_list = ft.ListView(expand=True, spacing=10, padding=10)
 
-        # Campo de entrada para nuevas tareas en el móvil
+        # Campo de entrada de texto
         self.txt_new_task = ft.TextField(
             label="Nueva Entrada Rápida...",
             expand=True,
@@ -32,35 +31,39 @@ class MatrizEnfoqueMobileApp:
             text_size=14
         )
 
-        # SELECTOR DE SÍMBOLOS BUJO PARA EL CELULAR
+        # 🎯 DROPDOWN INTEGRAL CON TODOS LOS SÍMBOLOS DISPONIBLES EN DOMINIO
         self.dropdown_symbol = ft.Dropdown(
-            width=80,
+            width=100,
             hint_text="Tipo",
             border_color=self.colors["primary"],
             options=[
+                # Clásicos
                 ft.dropdown.Option(BuJoSymbol.TASK_PENDING.value, "• Tarea"),
-                ft.dropdown.Option(BuJoSymbol.KEY_ACTIVITY.value, "✓ Clave"),
-                ft.dropdown.Option(BuJoSymbol.AVOIDED_ACTIVITY.value, "// Evitar"),
-                ft.dropdown.Option(BuJoSymbol.DECISION.value, "D Decisión"),
+                ft.dropdown.Option(BuJoSymbol.NOTE.value, "— Nota"),
+                ft.dropdown.Option(BuJoSymbol.EVENT.value, "○ Evento"),
                 ft.dropdown.Option(BuJoSymbol.SCHEDULED_TASK.value, "< Prog"),
+                ft.dropdown.Option(BuJoSymbol.TASK_MIGRATED.value, "> Migr"),
+                ft.dropdown.Option(BuJoSymbol.TASK_COMPLETED.value, "X Hech"),
+                # Extensiones Neurodivergentes
+                ft.dropdown.Option(BuJoSymbol.KEY_ACTIVITY.value, "✓ Clave"),
+                ft.dropdown.Option(BuJoSymbol.AVOIDED_ACTIVITY.value, "// Evit"),
+                ft.dropdown.Option(BuJoSymbol.DECISION.value, "D Decis"),
             ],
             value=BuJoSymbol.TASK_PENDING.value  
         )
 
-        # Registro de Callbacks del controlador central
+        # Registro de Callbacks reactivos
         self.controller.register_view_callbacks(
             on_kanban_changed=self.refresh_ui,
             on_pomodoro_tick=self.refresh_pomodoro
         )
 
-        # ⏰ HILO DEL RELOJ EN SEGUNDO PLANO
+        # ⏰ HILO DE FONDO CONTROLADO PARA EL RELOJ POMODORO
         self.clock_running = True
-        self.clock_thread = threading.Thread(target=self._mobile_clock_loop, daemon=True)
-        self.clock_thread.start()
+        self.page.run_task(self._mobile_clock_loop)
 
     def build_ui(self):
-        """Construye la estructura de la aplicación móvil interactiva."""
-        # --- CABECERA ---
+        """Dibuja de forma nativa los componentes móviles en pantalla."""
         self.app_bar = ft.AppBar(
             title=ft.Text("🎯 Matriz de Enfoque", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
             bgcolor=self.colors["primary"],
@@ -68,12 +71,12 @@ class MatrizEnfoqueMobileApp:
         )
         self.page.appbar = self.app_bar
 
-        # --- PANEL DEL POMODORO INVERSO ---
-        self.lbl_pomo_phase = ft.Text("Fase: Inactivo", italic=True, size=14)
+        # --- SECCIÓN POMODORO ---
+        self.lbl_pomo_phase = ft.Text("Fase: Arranque", italic=True, size=14)
         
-        # 💡 SOLUCIÓN SEGURA: Inicializamos el texto base en 25:00 por defecto de manera limpia
-        # Evitamos leer propiedades internas no expuestas del KanbanManager
-        self.lbl_pomo_timer = ft.Text("25:00", size=32, weight=ft.FontWeight.BOLD, color=self.colors["primary"])
+        mins = self.controller.pomodoro.current_time_left // 60
+        secs = self.controller.pomodoro.current_time_left % 60
+        self.lbl_pomo_timer = ft.Text(f"{mins:02d}:{secs:02d}", size=32, weight=ft.FontWeight.BOLD, color=self.colors["primary"])
 
         pomodoro_card = ft.Card(
             content=ft.Container(
@@ -90,7 +93,7 @@ class MatrizEnfoqueMobileApp:
             margin=10
         )
 
-        # --- SECCIÓN DE ENTRADA CON SELECTOR DE SÍMBOLO ---
+        # --- SECCIÓN ADICIÓN ---
         input_row = ft.Container(
             content=ft.Row([
                 self.dropdown_symbol,
@@ -105,10 +108,10 @@ class MatrizEnfoqueMobileApp:
             padding=10
         )
 
-        # --- CONTENEDOR DINÁMICO DE COLUMNAS ---
+        # Layout dinámico
         self.column_container = ft.Container(content=self.todo_list, expand=True)
 
-        # --- BARRA DE NAVEGACIÓN INFERIOR ---
+        # Barra inferior de pestañas
         self.page.navigation_bar = ft.NavigationBar(
             selected_index=0,
             on_change=self._on_nav_change,
@@ -119,7 +122,6 @@ class MatrizEnfoqueMobileApp:
             ]
         )
 
-        # Ensamblar todo en la pantalla
         self.page.add(
             ft.Column([
                 pomodoro_card,
@@ -130,26 +132,23 @@ class MatrizEnfoqueMobileApp:
         
         self.refresh_ui()
 
-    def _mobile_clock_loop(self):
-        """Bucle que interactúa con los métodos ya existentes en tu controlador."""
-        while self.clock_running:
+    async def _mobile_clock_loop(self):
+        """Bucle asíncrono no bloqueante coordinado con el renderizador de Flet."""
+        while True:
             try:
-                # 💡 SOLUCIÓN SEGURA: Invocamos el update del manager directo usando los métodos 
-                # públicos que ya utiliza el sistema de escritorio para no romper el encapsulamiento.
-                if hasattr(self.controller.kanban_manager, 'update_pomodoro_timer'):
-                    self.controller.kanban_manager.update_pomodoro_timer()
-                elif hasattr(self.controller.kanban_manager, 'tick'):
-                    self.controller.kanban_manager.tick()
-                time.sleep(1)
+                # Ejecuta el avance síncrono del modelo
+                self.controller.update_timer()
+                # Pausa la corrutina por 1 segundo de manera asíncrona sin congelar la UI
+                await asyncio.sleep(1)
             except Exception:
                 pass
 
     def _add_task_from_mobile(self, e):
-        """Captura el texto y el símbolo seleccionado desde el celular."""
         title = self.txt_new_task.value.strip()
         if not title:
             return
         
+        # Obtener el Enum puro basándonos en la selección en crudo del string del Dropdown
         selected_symbol_str = self.dropdown_symbol.value
         chosen_symbol = BuJoSymbol(selected_symbol_str)
         
@@ -187,6 +186,8 @@ class MatrizEnfoqueMobileApp:
         if task.is_inspired: prefix = "💡 " + prefix
 
         actions = []
+        
+        # 🗑️ LLAMADA SEGURA AL MÉTODO DE BORRADO INDIVIDUAL EN EL CONTROLADOR
         actions.append(ft.IconButton(
             icon=ft.Icons.DELETE_OUTLINE,
             icon_color=ft.Colors.RED_400,
@@ -215,7 +216,7 @@ class MatrizEnfoqueMobileApp:
             bgcolor=self.colors["card"],
             padding=12,
             border_radius=8,
-            border=ft.Border.all(0.5, ft.Colors.BLACK26)
+            border=ft.Border.all(0.5, ft.Colors.BLACK26)  # 💡 CORREGIDO: 'ft.Border.all' con 'B' mayúscula
         )
 
     def refresh_ui(self):

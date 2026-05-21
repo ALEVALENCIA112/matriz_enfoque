@@ -45,6 +45,17 @@ class MainController:
         self.kanban_manager.move_task(item_id, target_column)
         self._notify_kanban_change()
 
+    def delete_bujo_item(self, item_id: str) -> None:
+        """
+        Elimina físicamente un elemento por su identificador único.
+        Conecta de forma directa la intención de la UI con el Repositorio de Datos.
+        """
+        try:
+            self.kanban_manager.repository.delete_task(item_id)
+            self._notify_kanban_change()
+        except Exception:
+            pass
+
     def toggle_item_priority(self, item_id: str) -> None:
         """Alterna el marcador clásico de prioridad (*) en el elemento."""
         self.kanban_manager.toggle_signifier(item_id, "priority")
@@ -100,5 +111,4 @@ class MainController:
 
     def _notify_pomodoro_tick(self) -> None:
         if self._on_pomodoro_tick:
-            # Pasa la fase actual (Arranque, Enfoque, Descanso) y los segundos restantes
             self._on_pomodoro_tick(self.pomodoro.current_phase, self.pomodoro.current_time_left)

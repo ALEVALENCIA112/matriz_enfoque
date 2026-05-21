@@ -59,6 +59,10 @@ class KanbanCard(tk.Frame):
         # 4. Panel inferior de botones kinestésicos
         btn_frame = tk.Frame(self, bg=self.colors["bg"])
         btn_frame.pack(anchor="e", pady=4)
+
+        # 🗑️ BOTÓN DE BORRADO FÍSICO DIRECTO PARA EL ESCRITORIO
+        tk.Button(btn_frame, text="🗑️", font=("Segoe UI", 8), bd=0, bg=self.colors["bg"], fg="#E74C3C",
+                  command=lambda: self.controller.delete_bujo_item(self.task.id)).pack(side="left", padx=2)
         
         # Conmutadores rápidos (* / !)
         tk.Button(btn_frame, text="⭐", font=("Segoe UI", 8), bd=0, bg=self.colors["bg"],
