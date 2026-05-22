@@ -22,7 +22,7 @@ class DesktopGUI:
         
         # Configuración de la ventana principal
         self.root = tk.Tk()
-        self.root.title("Matriz de Enfoque Elástico - TDAH Kinestésico")
+        self.root.title("Matriz de Enfoque")
         self.root.geometry("1100x750")
         self.root.minsize(900, 600)
         
