@@ -5,6 +5,10 @@ from core.entities import KanbanColumn, BuJoSymbol
 
 
 class MatrizEnfoqueMobileApp:
+
+    VERSION = "1.0.3"
+    COPYRIGHT = "© 2026 CRAV - Todos los derechos reservados"
+
     def __init__(self, page: ft.Page, controller):
         self.page = page
         self.controller = controller
@@ -21,7 +25,24 @@ class MatrizEnfoqueMobileApp:
 
         self.todo_list = ft.ListView(expand=True, spacing=10, padding=10)
         self.progress_list = ft.ListView(expand=True, spacing=10, padding=10)
-        self.done_list = ft.ListView(expand=True, spacing=10, padding=10)
+        self.done_list_view = ft.ListView(expand=True, spacing=10, padding=10)
+
+        # Botón para limpiar mesa en lote desde el celular
+        self.btn_clear_done_mobile = ft.ElevatedButton(
+            content=ft.Text("🧹 Limpiar Mesa", color="white"),
+            icon=ft.Icons.CLEANING_SERVICES,
+            bgcolor="#E74C3C",
+            on_click=self._handle_clear_mesa_mobile
+        )
+
+        # Empaquetamos el botón arriba y las tarjetas abajo
+        self.done_list = ft.Column(
+            expand=True,
+            controls=[
+                ft.Container(content=self.btn_clear_done_mobile, padding=ft.Padding(top=10, left=10, right=10, bottom=0)),
+                self.done_list_view
+            ]
+        )
 
         # Campo de entrada de texto
         self.txt_new_task = ft.TextField(
@@ -131,7 +152,18 @@ class MatrizEnfoqueMobileApp:
             ft.Column([
                 pomodoro_card,
                 input_row,          
-                self.column_container  
+                self.column_container,
+                # --- BARRA DE CRÉDITOS Y VERSIÓN GLOBAL MÓVIL ---
+                ft.Container(
+                    content=ft.Text(
+                        value=f"Versión {self.VERSION}  •  {self.COPYRIGHT}",
+                        size=10,
+                        color=ft.Colors.GREY_500,
+                        weight=ft.FontWeight.W_300,
+                        text_align=ft.TextAlign.CENTER,  # Centrado estético para teléfonos directamente desde su propiedad
+                    ),
+                    padding=ft.Padding(left=10, top=0, right=10, bottom=5)
+                )
             ], expand=True)
         )
         
@@ -227,14 +259,14 @@ class MatrizEnfoqueMobileApp:
     def refresh_ui(self):
         self.todo_list.controls.clear()
         self.progress_list.controls.clear()
-        self.done_list.controls.clear()
+        self.done_list_view.controls.clear()
 
         for task in self.controller.get_column_content(KanbanColumn.TO_DO):
             self.todo_list.controls.append(self._render_task_item(task))
         for task in self.controller.get_column_content(KanbanColumn.IN_PROGRESS):
             self.progress_list.controls.append(self._render_task_item(task))
         for task in self.controller.get_column_content(KanbanColumn.DONE):
-            self.done_list.controls.append(self._render_task_item(task))
+            self.done_list_view.controls.append(self._render_task_item(task))
 
         try:
             self.page.update()
@@ -258,3 +290,13 @@ class MatrizEnfoqueMobileApp:
             self.page.update()
         except Exception:
             pass
+
+    def _handle_clear_mesa_mobile(self, e):
+        """Manejador de evento móvil para vaciar por completo la columna 'Hecho'."""
+        try:
+            self.controller.archive_completed_tasks()
+            self.page.snack_bar = ft.SnackBar(ft.Text("¡Mesa de trabajo despejada! 🧹"), duration=2000)
+            self.page.snack_bar.open = True
+            self.page.update()
+        except Exception as ex:
+            print(f"Error al limpiar mesa en móvil: {ex}")

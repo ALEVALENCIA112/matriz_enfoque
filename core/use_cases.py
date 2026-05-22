@@ -50,8 +50,7 @@ class KanbanManager:
     def get_items_by_column(self, column: KanbanColumn) -> List[KanbanTask]:
         """Carga perezosa (JIT): Filtra bajo demanda los elementos de una columna específica."""
         all_tasks = self.repository.get_all_tasks()
-        if column == KanbanColumn.DONE:
-            return [t for t in all_tasks if t.column == column and not getattr(t, 'is_archived', False)]
+        # Modificación: Ya no filtramos por 'is_archived', devolvemos la columna limpia
         return [t for t in all_tasks if t.column == column]
     
     def archive_done_tasks(self) -> None:
@@ -59,6 +58,5 @@ class KanbanManager:
         all_tasks = self.repository.get_all_tasks()
         for task in all_tasks:
             if task.column == KanbanColumn.DONE:
-                # Le añadimos el atributo dinámicamente o puedes agregarlo a la clase KanbanTask
-                task.is_archived = True
-                self.repository.save_task(task)
+                # Modificación: En lugar de guardar con bandera, borramos directamente
+                self.repository.delete_task(task.id)

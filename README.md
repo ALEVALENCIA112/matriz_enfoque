@@ -39,3 +39,4 @@ Versión
 1.0.0 Lanzamiento de App .exe y .apk
 1.0.1 Corrección de conectividad con firebase y mejora de creacion
 1.0.2 Mejora en manejo de sincronia
+1.0.3 Agregado borón de limpieza en apk y lbl de versión

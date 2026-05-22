@@ -4,7 +4,7 @@
 app:
   name: Matriz de Enfoque
   package: com.valencia.matrizenfoque
-  version: 1.0.2
+  version: 1.0.3
 
 requirements:
 - requests
