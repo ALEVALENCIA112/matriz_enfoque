@@ -38,3 +38,4 @@ Creado y Desarrollado Por Alejandro Valencia
 Versión
 1.0.0 Lanzamiento de App .exe y .apk
 1.0.1 Corrección de conectividad con firebase y mejora de creacion
+1.0.2 Mejora en manejo de sincronia

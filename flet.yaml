@@ -1,8 +1,10 @@
-# flet.yaml
-app:
-  name: "Matriz de Enfoque"
-  package: "com.valencia.matrizenfoque"
-  version: "1.0.1"
+﻿android:
+  icon: assets/app_icon.png
 
-android:
-  icon: "assets/app_icon.png"  # Aquí Android toma tu logotipo personalizado
+app:
+  name: Matriz de Enfoque
+  package: com.valencia.matrizenfoque
+  version: 1.0.2
+
+requirements:
+- requests
