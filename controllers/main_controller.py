@@ -1,5 +1,6 @@
 # controllers/main_controller.py
 import uuid
+import json
 from typing import Callable, List, Optional
 from core.entities import KanbanColumn, BuJoSymbol, PomodoroInverse, KanbanTask
 from core.use_cases import KanbanManager
@@ -74,6 +75,23 @@ class MainController:
         """Ordena al mánager archivar las tareas terminadas y refresca la interfaz."""
         self.kanban_manager.archive_done_tasks()
         self._notify_kanban_change()
+
+
+    def get_local_metrics(self) -> dict:
+        """
+        Retorna las métricas históricas acumuladas en el almacenamiento local de este dispositivo.
+        Firebase permanece en 0 bytes respecto a históricos redundantes.
+        """
+        try:
+            local_storage = getattr(self.kanban_manager.repository, 'local_repo', None)
+            if local_storage and hasattr(local_storage, 'filepath'):
+                with open(local_storage.filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                return data.get("historico_metricas", {"tareas_completadas": 0, "actividades_clave_completadas": 0})
+        except Exception:
+            pass
+        return {"tareas_completadas": 0, "actividades_clave_completadas": 0}
+
 
     # --- Operaciones del Pomodoro Inverso ---
 

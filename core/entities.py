@@ -38,6 +38,7 @@ class KanbanTask:
         self.created_at = datetime.now()
         self.is_starred = False  # Para soporte del significador de prioridad (*)
         self.is_inspired = False # Para soporte del significador de idea (!)
+        self.is_archived = False
         
     def move_to(self, target_column: KanbanColumn) -> None:
         """Maneja las transiciones de estado aplicando las reglas de tu sistema."""

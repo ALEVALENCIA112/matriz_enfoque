@@ -93,6 +93,7 @@ class LocalFirstTaskRepository(ITaskRepository):
                         new_task.symbol = BuJoSymbol(cloud_task["symbol"])
                         new_task.is_starred = cloud_task.get("is_starred", False)
                         new_task.is_inspired = cloud_task.get("is_inspired", False)
+                        new_task.is_archived = cloud_task.get("is_archived", False)
                         self.local_repo.save_task(new_task)
                     else:
                         # Si existe en ambos lados, respetamos el estado local si tiene operaciones pendientes, 
@@ -107,6 +108,7 @@ class LocalFirstTaskRepository(ITaskRepository):
                             updated_task.symbol = BuJoSymbol(cloud_task["symbol"])
                             updated_task.is_starred = cloud_task.get("is_starred", False)
                             updated_task.is_inspired = cloud_task.get("is_inspired", False)
+                            updated_task.is_archived = cloud_task.get("is_archived", False)
                             self.local_repo.save_task(updated_task)
 
                 # 4. Limpieza inversa: Si una tarea está en local pero NO está en Firebase, y NO tiene cambios pendientes, 

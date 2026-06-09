@@ -14,7 +14,7 @@ class DesktopGUI:
     físicos del usuario para enviarlos al Controlador.
     """
 
-    VERSION = "1.0.3"
+    VERSION = "1.0.4"
     COPYRIGHT = "© 2026 CRAV - Todos los derechos reservados"
 
     def __init__(self, controller):
@@ -63,15 +63,15 @@ class DesktopGUI:
         self.refresh_kanban()
         self._start_ui_timer_loop()
 
-        # --- BARRA DE CRÉDITOS Y VERSIÓN GLOBAL (Abajo del todo) ---
-        lbl_version_pc = tk.Label(
+        # --- BARRA DE VERSIÓN Y ANÁLISIS DE ESCRITORIO ---
+        self.lbl_version_footer = tk.Label(
             self.root,
             text=f"Versión {self.VERSION}   |   {self.COPYRIGHT}",
             font=("Arial", 8),
-            bg=self.colors["bg"],  # Usa el gris claro del fondo global para homogeneidad
-            fg="gray"              # Color tenue para mantener la interfaz limpia
+            bg=self.colors["bg"],
+            fg="gray"
         )
-        lbl_version_pc.pack(side="bottom", fill="x", anchor="w", padx=15, pady=5)
+        self.lbl_version_footer.pack(side="bottom", fill="x", anchor="w", padx=15, pady=4)
 
     def _setup_styles(self):
         self.style = ttk.Style()

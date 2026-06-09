@@ -7,24 +7,29 @@ from views.desktop_gui import DesktopGUI
 from infrastructure.cloud_storage import LocalFirstTaskRepository
 
 def main():
-    print("Iniciando la Matriz de Enfoque Elástico con Sincronización en la Nube...")
+    print("=====================================================================")
+    print(" Iniciando: Matriz de Enfoque Elástico v1.0.4 (Suite de Escritorio)")
+    print(" Arquitectura: Local-First con Sincronización Diferida Híbrida")
+    print("=====================================================================\n")
 
+    # URL base de la base de datos distribuida en Firebase Realtime
     FIREBASE_URL = "https://matriz-enfoque-default-rtdb.firebaseio.com/"
 
-
-    # 2. Inyectamos la Infraestructura de la Nube en lugar de la Local
-    repository = LocalFirstTaskRepository(database_url=FIREBASE_URL,
-                                        user_id="ALEVALENCIA112", 
-                                        local_filepath="matriz_datos.json"
+    # 1. Inyectamos la infraestructura híbrida (SOLID - DIP)
+    # Almacena el estado transaccional en 'matriz_datos.json' antes de subirlo a la nube
+    repository = LocalFirstTaskRepository(
+        database_url=FIREBASE_URL,
+        user_id="ALEVALENCIA112", 
+        local_filepath="matriz_datos.json"
     )
 
-    # 3. Inicializar el Core de Negocio inyectando su dependencia (SOLID - DIP)
+    # 2. Inicializar el Core de Negocio inyectando su dependencia (SOLID - DIP)
     kanban_manager = KanbanManager(repository)
 
-    # 4. Inicializar el Controlador y entregarle el control del motor de negocio
+    # 3. Inicializar el Controlador y entregarle el control del motor de negocio
     controller = MainController(kanban_manager)
 
-    # 5. Lanzamiento de la interfaz de usuario (MVC)
+    # 4. Lanzamiento de la interfaz de usuario (MVC)
     try:
         # Aquí importaremos la vista de escritorio en el siguiente paso
         from views.desktop_gui import DesktopGUI
@@ -32,11 +37,11 @@ def main():
         app = DesktopGUI(controller)
         app.run()
         
-    except ImportError:
-        print("\n[Estructura OK] El Core, Controlador e Infraestructura están perfectamente acoplados.")
-        print("Modo de depuración por consola activo (Falta la interfaz gráfica en views/).")
-        # Demostración rápida de alta cohesión en consola si no existe la vista
-        print(f"Tareas actuales en 'Por Hacer': {controller.get_column_content(controller.get_column_content.__self__.kanban_manager.repository.get_all_tasks())}")
-
+    except ImportError as e:
+        print(f"\n⚠️ Error de importación al levantar la interfaz gráfica: {e}")
+        print("[Estructura OK] El Core, Controlador e Infraestructura están perfectamente acoplados.")
+        print("Modo de depuración por consola activo.")
+        print(f"Tareas actuales en 'Por Hacer': {len(controller.get_column_content('Por Hacer'))}")
+        
 if __name__ == "__main__":
     main()

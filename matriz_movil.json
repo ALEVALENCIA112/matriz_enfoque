@@ -3,33 +3,64 @@
         {
             "id": "05ca23ed-d5d6-4051-a0b7-c19da2e839d2",
             "title": "Deber estocásticos",
+            "symbol": "//",
             "column": "Por Hacer",
-            "symbol": "•",
             "is_starred": false,
             "is_inspired": false,
-            "is_archived": false,
-            "is_deleted_locally": false
+            "created_at": "2026-06-09T13:04:40.308177",
+            "is_archived": false
         },
         {
             "id": "75af736a-1aea-49e0-879c-1ee64cc3144e",
             "title": "Compras temu",
-            "column": "Por Hacer",
-            "symbol": "•",
+            "symbol": "//",
+            "column": "Hecho",
             "is_starred": false,
             "is_inspired": false,
-            "is_archived": false,
-            "is_deleted_locally": false
+            "created_at": "2026-06-09T12:23:04.894993",
+            "is_archived": true
         },
         {
             "id": "fec2a692-c33f-4bdf-b213-8039ae20d24b",
             "title": "Deber comprobacion estocasticos",
-            "column": "Por Hacer",
-            "symbol": "•",
+            "symbol": "//",
+            "column": "Hecho",
             "is_starred": false,
             "is_inspired": false,
-            "is_archived": false,
-            "is_deleted_locally": false
+            "created_at": "2026-06-09T12:45:30.123389",
+            "is_archived": true
+        },
+        {
+            "id": "3b6427d4-42f7-400c-93db-9b36a5475064",
+            "title": "Estudiar",
+            "symbol": "•",
+            "column": "Por Hacer",
+            "is_starred": false,
+            "is_inspired": false,
+            "created_at": "2026-06-09T13:18:16.326982",
+            "is_archived": false
         }
     ],
-    "pending_ops": []
+    "pending_ops": [
+        {
+            "action": "save",
+            "task_id": "75af736a-1aea-49e0-879c-1ee64cc3144e"
+        },
+        {
+            "action": "save",
+            "task_id": "fec2a692-c33f-4bdf-b213-8039ae20d24b"
+        },
+        {
+            "action": "save",
+            "task_id": "05ca23ed-d5d6-4051-a0b7-c19da2e839d2"
+        },
+        {
+            "action": "save",
+            "task_id": "3b6427d4-42f7-400c-93db-9b36a5475064"
+        }
+    ],
+    "historico_metricas": {
+        "tareas_completadas": 2,
+        "actividades_clave_completadas": 0
+    }
 }

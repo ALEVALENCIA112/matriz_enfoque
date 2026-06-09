@@ -27,12 +27,12 @@ class KanbanCard(tk.Frame):
         if self.task.symbol == BuJoSymbol.KEY_ACTIVITY:
             lbl_color = self.colors["accent_ac"]
             font_weight = "bold"
+            self.configure(bd=2, relief="ridge", bg="#FFF5F5") # Rompe el patrón visual estándar
         elif self.task.symbol == BuJoSymbol.AVOIDED_ACTIVITY:
             lbl_color = self.colors["accent_ae"]
         elif self.task.symbol == BuJoSymbol.DECISION:
             lbl_color = self.colors["accent_d"]
             font_weight = "bold"
-
         elif self.task.symbol == BuJoSymbol.SCHEDULED_TASK:
             lbl_color = "#3498DB"  # Un azul/celeste vivo (combina con la paleta)
             font_weight = "normal" # Mantener grosor normal para no competir con el visto '✓'
@@ -64,7 +64,7 @@ class KanbanCard(tk.Frame):
         tk.Button(btn_frame, text="🗑️", font=("Segoe UI", 8), bd=0, bg=self.colors["bg"], fg="#E74C3C",
                   command=lambda: self.controller.delete_bujo_item(self.task.id)).pack(side="left", padx=2)
         
-        # Conmutadores rápidos (* / !)
+        # Conmutadores rápidos (* / !) regresados a sus métodos reales del controlador
         tk.Button(btn_frame, text="⭐", font=("Segoe UI", 8), bd=0, bg=self.colors["bg"],
                   command=lambda: self.controller.toggle_item_priority(self.task.id)).pack(side="left", padx=2)
                   
@@ -80,11 +80,11 @@ class KanbanCard(tk.Frame):
             tk.Button(btn_frame, text="▶", font=("Segoe UI", 8, "bold"), bd=1,
                       command=self._move_right).pack(side="left", padx=2)
 
+
+    def _move_left(self):
+        prev_col = KanbanColumn.TO_DO if self.task.column == KanbanColumn.IN_PROGRESS else KanbanColumn.IN_PROGRESS
+        self.controller.move_bujo_item(self.task.id, prev_col)
+
     def _move_right(self):
         next_col = KanbanColumn.IN_PROGRESS if self.task.column == KanbanColumn.TO_DO else KanbanColumn.DONE
         self.controller.move_bujo_item(self.task.id, next_col)
-
-    def _move_left(self):
-        # Si se devuelve de 'En Proceso' a 'Por Hacer', mutará a Actividad Evitada (//) en el dominio
-        prev_col = KanbanColumn.TO_DO if self.task.column == KanbanColumn.IN_PROGRESS else KanbanColumn.IN_PROGRESS
-        self.controller.move_bujo_item(self.task.id, prev_col)

@@ -8,28 +8,50 @@
             "is_starred": false,
             "is_inspired": false,
             "is_archived": false,
-            "is_deleted_locally": false
+            "is_deleted_locally": true
         },
         {
             "id": "75af736a-1aea-49e0-879c-1ee64cc3144e",
             "title": "Compras temu",
-            "column": "Por Hacer",
-            "symbol": "•",
+            "symbol": "//",
+            "column": "Hecho",
             "is_starred": false,
             "is_inspired": false,
-            "is_archived": false,
-            "is_deleted_locally": false
+            "created_at": "2026-06-09T12:13:07.632521",
+            "is_archived": true
         },
         {
             "id": "fec2a692-c33f-4bdf-b213-8039ae20d24b",
             "title": "Deber comprobacion estocasticos",
+            "symbol": "//",
             "column": "Por Hacer",
-            "symbol": "•",
             "is_starred": false,
             "is_inspired": false,
+            "created_at": "2026-06-09T12:26:18.991405",
             "is_archived": false,
-            "is_deleted_locally": false
+            "is_deleted_locally": true
         }
     ],
-    "pending_ops": []
+    "pending_ops": [
+        {
+            "action": "delete",
+            "task_id": "05ca23ed-d5d6-4051-a0b7-c19da2e839d2"
+        },
+        {
+            "action": "save",
+            "task_id": "75af736a-1aea-49e0-879c-1ee64cc3144e"
+        },
+        {
+            "action": "save",
+            "task_id": "fec2a692-c33f-4bdf-b213-8039ae20d24b"
+        },
+        {
+            "action": "delete",
+            "task_id": "fec2a692-c33f-4bdf-b213-8039ae20d24b"
+        }
+    ],
+    "historico_metricas": {
+        "tareas_completadas": 1,
+        "actividades_clave_completadas": 0
+    }
 }

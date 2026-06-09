@@ -1,4 +1,3 @@
-# views_mobile/mobile_app.py
 import flet as ft
 import asyncio
 from core.entities import KanbanColumn, BuJoSymbol
@@ -6,7 +5,7 @@ from core.entities import KanbanColumn, BuJoSymbol
 
 class MatrizEnfoqueMobileApp:
 
-    VERSION = "1.0.3"
+    VERSION = "1.0.4"
     COPYRIGHT = "© 2026 CRAV - Todos los derechos reservados"
 
     def __init__(self, page: ft.Page, controller):
@@ -94,6 +93,15 @@ class MatrizEnfoqueMobileApp:
             title=ft.Text("🎯 Matriz de Enfoque", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
             bgcolor=self.colors["primary"],
             center_title=True,
+            # 📊 INTEGRACIÓN DEL PUNTO 3: Botón de analíticas corregido
+            actions=[
+                ft.IconButton(
+                    icon=ft.Icons.BAR_CHART, # <-- CAMBIADO AQUÍ (Universal y seguro)
+                    icon_color=ft.Colors.WHITE,
+                    tooltip="Ver Rendimiento Semanal",
+                    on_click=lambda _: self._show_weekly_dashboard_mobile()
+                )
+            ]
         )
         self.page.appbar = self.app_bar
 
@@ -160,114 +168,63 @@ class MatrizEnfoqueMobileApp:
                         size=10,
                         color=ft.Colors.GREY_500,
                         weight=ft.FontWeight.W_300,
-                        text_align=ft.TextAlign.CENTER,  # Centrado estético para teléfonos directamente desde su propiedad
+                        text_align=ft.TextAlign.CENTER,
                     ),
-                    padding=ft.Padding(left=10, top=0, right=10, bottom=5)
+                    padding=ft.Padding(left=10, top=4, right=10, bottom=4)
                 )
             ], expand=True)
         )
         
         self.refresh_ui()
 
-    async def _mobile_clock_loop(self):
-        """Bucle asíncrono no bloqueante coordinado con el renderizador de Flet."""
-        while True:
-            try:
-                # Ejecuta el avance síncrono del modelo
-                self.controller.update_timer()
-                # Pausa la corrutina por 1 segundo de manera asíncrona sin congelar la UI
-                await asyncio.sleep(1)
-            except Exception:
-                pass
+    def _on_nav_change(self, e):
+        idx = e.control.selected_index
+        if idx == 0:
+            self.column_container.content = self.todo_list
+        elif idx == 1:
+            self.column_container.content = self.progress_list
+        elif idx == 2:
+            self.column_container.content = self.done_list
+        self.page.update()
 
     def _add_task_from_mobile(self, e):
         title = self.txt_new_task.value.strip()
         if not title:
             return
         
-        # Obtener el Enum puro basándonos en la selección en crudo del string del Dropdown
-        selected_symbol_str = self.dropdown_symbol.value
-        chosen_symbol = BuJoSymbol(selected_symbol_str)
-        
-        self.controller.add_bujo_item(title, chosen_symbol)
-        self.txt_new_task.value = ""  
-        self.page.update()
+        try:
+            chosen_sym = BuJoSymbol(self.dropdown_symbol.value)
+            self.controller.add_bujo_item(title, chosen_sym)
+            self.txt_new_task.value = ""
+            self.page.update()
+        except ValueError as ex:
+            self.page.snack_bar = ft.SnackBar(content=ft.Text(str(ex)), bgcolor="#E74C3C")
+            self.page.snack_bar.open = True
+            self.page.update()
 
-    def _on_nav_change(self, e):
-        index = int(e.data)
-        if index == 0:
-            self.column_container.content = self.todo_list
-        elif index == 1:
-            self.column_container.content = self.progress_list
-        elif index == 2:
-            self.column_container.content = self.done_list
-        self.page.update()
-
-    def _render_task_item(self, task):
-        text_color = ft.Colors.BLACK
-        weight = ft.FontWeight.NORMAL
-        
-        if task.symbol == BuJoSymbol.KEY_ACTIVITY:
-            text_color = self.colors["accent_ac"]
-            weight = ft.FontWeight.BOLD
-        elif task.symbol == BuJoSymbol.AVOIDED_ACTIVITY:
-            text_color = self.colors["accent_ae"]
-        elif task.symbol == BuJoSymbol.DECISION:
-            text_color = self.colors["accent_d"]
-            weight = ft.FontWeight.BOLD
-        elif task.symbol == BuJoSymbol.SCHEDULED_TASK:
-            text_color = self.colors["scheduled"]
-
-        prefix = f"{task.symbol.value} "
-        if task.is_starred: prefix = "⭐ " + prefix
-        if task.is_inspired: prefix = "💡 " + prefix
-
-        actions = []
-        
-        # 🗑️ LLAMADA SEGURA AL MÉTODO DE BORRADO INDIVIDUAL EN EL CONTROLADOR
-        actions.append(ft.IconButton(
-            icon=ft.Icons.DELETE_OUTLINE,
-            icon_color=ft.Colors.RED_400,
-            icon_size=18,
-            on_click=lambda _: self.controller.delete_bujo_item(task.id)
-        ))
-
-        if task.column != KanbanColumn.TO_DO:
-            actions.append(ft.IconButton(
-                icon=ft.Icons.ARROW_BACK, 
-                icon_size=18,
-                on_click=lambda _: self.controller.move_bujo_item(task.id, KanbanColumn.TO_DO if task.column == KanbanColumn.IN_PROGRESS else KanbanColumn.IN_PROGRESS)
-            ))
-        if task.column != KanbanColumn.DONE:
-            actions.append(ft.IconButton(
-                icon=ft.Icons.ARROW_FORWARD, 
-                icon_size=18,
-                on_click=lambda _: self.controller.move_bujo_item(task.id, KanbanColumn.IN_PROGRESS if task.column == KanbanColumn.TO_DO else KanbanColumn.DONE)
-            ))
-
-        return ft.Container(
-            content=ft.Row([
-                ft.Text(f"{prefix}{task.title}", color=text_color, weight=weight, expand=True, size=15),
-                ft.Row(actions, spacing=0)
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            bgcolor=self.colors["card"],
-            padding=12,
-            border_radius=8,
-            border=ft.Border.all(0.5, ft.Colors.BLACK26)  # 💡 CORREGIDO: 'ft.Border.all' con 'B' mayúscula
-        )
+    async def _mobile_clock_loop(self):
+        """Bucle asíncrono no bloqueante coordinado con el renderizador de Flet."""
+        while self.clock_running:
+            self.controller.update_timer()
+            await asyncio.sleep(1)
 
     def refresh_ui(self):
+        # 1. Vaciado absoluto de los buffers de listas de Flet
         self.todo_list.controls.clear()
         self.progress_list.controls.clear()
         self.done_list_view.controls.clear()
 
+        # 2. Re-inyección limpia desde el controlador compartido
         for task in self.controller.get_column_content(KanbanColumn.TO_DO):
             self.todo_list.controls.append(self._render_task_item(task))
+            
         for task in self.controller.get_column_content(KanbanColumn.IN_PROGRESS):
             self.progress_list.controls.append(self._render_task_item(task))
+            
         for task in self.controller.get_column_content(KanbanColumn.DONE):
             self.done_list_view.controls.append(self._render_task_item(task))
 
+        # 3. Forzar actualización del árbol de componentes en la pantalla
         try:
             self.page.update()
         except Exception:
@@ -281,6 +238,7 @@ class MatrizEnfoqueMobileApp:
         
         if phase == "Descanso":
             self.lbl_pomo_timer.color = ft.Colors.GREEN
+            self.lbl_pomo_phase.value = "Fase: ¡Descanso! (Aplica Cierre Feynman 🗣️)"
         elif phase == "Enfoque":
             self.lbl_pomo_timer.color = self.colors["accent_ac"]
         else:
@@ -291,12 +249,194 @@ class MatrizEnfoqueMobileApp:
         except Exception:
             pass
 
-    def _handle_clear_mesa_mobile(self, e):
-        """Manejador de evento móvil para vaciar por completo la columna 'Hecho'."""
+    def _render_task_item(self, task):
+        """Genera dinámicamente las tarjetas adaptativas en Flet Móvil."""
+        # Configuración visual adaptativa de la Actividad Clave
+        is_key = (task.symbol == BuJoSymbol.KEY_ACTIVITY)
+        bg_card = "#FFF5F5" if is_key else self.colors["card"]
+        border_side = ft.BorderSide(2, self.colors["accent_ac"]) if is_key else None
+
+        # Construcción de strings de estado
+        extra_badges = ""
+        if task.is_starred: extra_badges += " ⭐"
+        if task.is_inspired: extra_badges += " 💡"
+
+        return ft.Card(
+            content=ft.Container(
+                content=ft.Column([
+                    ft.Row([
+                        ft.Text(
+                            f"{task.symbol.value} {task.title}{extra_badges}", 
+                            weight=ft.FontWeight.BOLD if is_key else ft.FontWeight.NORMAL,
+                            color=self.colors["accent_ac"] if is_key else "black",
+                            expand=True
+                        )
+                    ]),
+                    ft.Row([
+                        # Botones de Modificadores Contextuales
+                        # Botón de Estrella (Prioridad)
+                        ft.IconButton(
+                            icon=ft.Icons.STAR if task.is_starred else ft.Icons.STAR_BORDER,
+                            icon_color="amber" if task.is_starred else "grey",
+                            icon_size=18,
+                            tooltip="Prioridad",
+                            on_click=lambda e, tid=task.id: self.controller.toggle_item_priority(tid)
+                        ),
+                        # Botón de Idea (Inspiración)
+                        ft.IconButton(
+                            icon=ft.Icons.LIGHTBULB if task.is_inspired else ft.Icons.LIGHTBULB_OUTLINE,
+                            icon_color="orange" if task.is_inspired else "grey",
+                            icon_size=18,
+                            tooltip="Inspiración",
+                            on_click=lambda e, tid=task.id: self.controller.toggle_item_inspiration(tid)
+                        ),
+                        
+                        # 🗑️ LLAMADA SEGURA AL MÉTODO DE BORRADO INDIVIDUAL
+                        ft.IconButton(
+                            icon=ft.Icons.DELETE_OUTLINE,
+                            icon_color=ft.Colors.RED_400,
+                            icon_size=18,
+                            tooltip="Eliminar tarea",
+                            on_click=lambda _, tid=task.id: self._handle_delete_task_mobile(tid)
+                        ),
+                                                                     
+                        ft.VerticalDivider(),
+                        # Flechas de navegación espacial
+                        ft.IconButton(
+                            icon=ft.Icons.ARROW_BACK, 
+                            icon_size=16, 
+                            disabled=(task.column == KanbanColumn.TO_DO),
+                            on_click=lambda _: self._move_task_left(task)
+                        ),
+                        ft.IconButton(
+                            icon=ft.Icons.ARROW_FORWARD, 
+                            icon_size=16, 
+                            disabled=(task.column == KanbanColumn.DONE),
+                            on_click=lambda _: self._move_task_right(task)
+                        ),
+                    ], alignment=ft.MainAxisAlignment.END, spacing=0)
+                ]),
+                padding=10,
+                bgcolor=bg_card,
+                border=ft.border.all(color=self.colors["accent_ac"], width=1) if is_key else None,
+                border_radius=8
+            )
+        )
+
+    def _toggle_priority(self, tid):
+        self.controller.toggle_item_priority(tid)
+
+    def _toggle_inspiration(self, tid):
+        self.controller.toggle_item_inspiration(tid)
+
+    def _move_task_left(self, task):
+        prev_col = KanbanColumn.TO_DO if task.column == KanbanColumn.IN_PROGRESS else KanbanColumn.IN_PROGRESS
+        self.controller.move_bujo_item(task.id, prev_col)
+        self.refresh_ui()
+
+    def _move_task_right(self, task):
+        next_col = KanbanColumn.DONE if task.column == KanbanColumn.IN_PROGRESS else KanbanColumn.IN_PROGRESS
+        self.controller.move_bujo_item(task.id, next_col)
+        self.refresh_ui()
+
+    def _handle_delete_task_mobile(self, task_id: str):
+        """Elimina la tarea en el repositorio local y fuerza el redibujado instantáneo de Flet."""
         try:
-            self.controller.archive_completed_tasks()
-            self.page.snack_bar = ft.SnackBar(ft.Text("¡Mesa de trabajo despejada! 🧹"), duration=2000)
+            self.controller.delete_task(task_id)
+            self.refresh_ui()
+            
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text("🗑️ Tarea eliminada correctamente."),
+                bgcolor="#34495E",
+                duration=2000
+            )
             self.page.snack_bar.open = True
             self.page.update()
+            
         except Exception as ex:
-            print(f"Error al limpiar mesa en móvil: {ex}")
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text(f"⚠️ Error al borrar: {str(ex)}"), 
+                bgcolor="red"
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
+
+    def _handle_clear_mesa_mobile(self, e):
+        """Manejador de evento móvil para vaciar 'Hecho' y disparar el chispazo analítico."""
+        try:
+            self.controller.archive_completed_tasks() 
+            
+            metrics = self.controller.get_local_metrics()
+            tot = metrics.get("tareas_completadas", 0)
+            ac = metrics.get("actividades_clave_completadas", 0)
+            
+            mensaje = f"¡Mesa limpia! Total histórico: {tot} completadas (✓ {ac} Actividades Clave)."
+            
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text(mensaje, color="white"),
+                duration=4000,
+                bgcolor="#2ECC71"
+            )
+            self.page.snack_bar.open = True
+            
+        except Exception as ex:
+            self.page.snack_bar = ft.SnackBar(content=ft.Text(f"⚠️ Error al limpiar: {str(ex)}"), bgcolor="red")
+            self.page.snack_bar.open = True
+
+    # 📊 MÓDULO DEL PUNTO 3: Dashboard Analítico Semanal Efímero
+    def _show_weekly_dashboard_mobile(self):
+        """Despliega un diálogo flotante efímero consultando de forma limpia al controlador."""
+        try:
+            # Consumimos de forma segura el diccionario de métricas crudas desde la lógica de negocio
+            metrics = self.controller.get_local_metrics()
+            
+            # Mapeamos con total correspondencia con los campos usados en _handle_clear_mesa_mobile
+            tot = metrics.get("tareas_completadas", 0)
+            ac = metrics.get("actividades_clave_completadas", 0)
+            
+            # Puedes usar contadores de tareas pendientes si los tienes mapeados, o inferirlos de los controles activos
+            dashboard_dialog = ft.AlertDialog(
+                title=ft.Row([
+                    ft.Icon(ft.Icons.AUTO_AWESOME, color="amber"),
+                    ft.Text("Enfoque Semanal", size=18, weight=ft.FontWeight.BOLD)
+                ], spacing=10),
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Text("Métricas de rendimiento acumuladas:", size=13, color="grey_600"),
+                        ft.Divider(),
+                        ft.Row([
+                            ft.Icon(ft.Icons.CHECK_CIRCLE, color="green_400", size=20),
+                            ft.Text("Histórico Total: ", weight=ft.FontWeight.BOLD),
+                            ft.Text(f"{tot}", size=15, weight=ft.FontWeight.BOLD, color="green")
+                        ]),
+                        ft.Row([
+                            ft.Icon(ft.Icons.GPP_GOOD, color=self.colors["accent_ac"], size=20),
+                            ft.Text("Actividades Clave ✓: ", weight=ft.FontWeight.BOLD),
+                            ft.Text(f"{ac}", size=15, weight=ft.FontWeight.BOLD, color=self.colors["accent_ac"])
+                        ]),
+                        ft.Divider(),
+                        ft.Text(
+                            "💡 Este panel es efímero. Al limpiar la mesa se enfoca en refrescar tu perspectiva sin sobrecarga visual.",
+                            size=11,
+                            italic=True,
+                            color="grey_500"
+                        )
+                    ], tight=True, spacing=12),
+                    width=280,
+                    padding=5
+                ),
+                actions=[
+                    ft.TextButton("Entendido", on_click=lambda e: self.page.close(dashboard_dialog))
+                ],
+                actions_alignment=ft.MainAxisAlignment.END
+            )
+            
+            self.page.open(dashboard_dialog)
+            
+        except Exception as ex:
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text(f"⚠️ No se pudieron cargar las métricas: {str(ex)}"),
+                bgcolor="red"
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
