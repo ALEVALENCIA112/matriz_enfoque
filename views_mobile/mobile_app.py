@@ -364,27 +364,37 @@ class MatrizEnfoqueMobileApp:
     def _handle_clear_mesa_mobile(self, e):
         """Manejador de evento móvil para vaciar 'Hecho' y disparar el chispazo analítico."""
         try:
-            # LLAMADA CORREGIDA AL MÉTODO REAL DEL CONTROLADOR
+            # 1. Ejecutar acción en el core a través del controlador
             self.controller.archive_done_tasks() 
+            # 2. Forzar refresco inmediato de las columnas Kanban en la UI
             self.refresh_ui() # Refresca el Kanban inmediatamente
             
+            # 3. Consultar las métricas locales consolidadas
             metrics = self.controller.get_local_metrics()
             tot = metrics.get("tareas_completadas", 0)
             ac = metrics.get("actividades_clave_completadas", 0)
             
             mensaje = f"¡Mesa limpia! Total histórico: {tot} completadas (✓ {ac} Actividades Clave)."
             
-            self.page.snack_bar = ft.SnackBar(
-                content=ft.Text(mensaje, color="white"),
-                duration=4000,
-                bgcolor="#2ECC71"
+            # 4. MANERA CORRECTA EN MÓVIL: Re-instanciar y abrir el SnackBar a través de page.show_snack_bar() o asignación directa limpia
+            snack = ft.SnackBar(
+                content=ft.Text(mensaje, color="white", size=13),
+                bgcolor="#2ECC71",
+                duration=4000
             )
-            self.page.snack_bar.open = True
+            self.page.snack_bar = snack
+            snack.open = True
+            # Forzar actualización de la página para que Flet dibuje el SnackBar en el teléfono
             self.page.update()
             
         except Exception as ex:
-            self.page.snack_bar = ft.SnackBar(content=ft.Text(f"⚠️ Error al limpiar: {str(ex)}"), bgcolor="red")
-            self.page.snack_bar.open = True
+            # En caso de error, mostrar alerta roja
+            snack_error = ft.SnackBar(
+                content=ft.Text(f"⚠️ Error al limpiar: {str(ex)}", color="white"),
+                bgcolor="#E74C3C"
+            )
+            self.page.snack_bar = snack_error
+            snack_error.open = True
             self.page.update()
 
     # 📊 MÓDULO DEL PUNTO 3: Dashboard Analítico Semanal Efímero
@@ -435,15 +445,21 @@ class MatrizEnfoqueMobileApp:
                 actions_alignment=ft.MainAxisAlignment.END
             )
             
-            # SOLUCIÓN DE APERTURA EN FLET:
+            # MANERA CORRECTA EN MÓVIL: Asignar al árbol jerárquico de la página, abrir y actualizar
             self.page.dialog = dashboard_dialog
             dashboard_dialog.open = True
             self.page.update()
             
         except Exception as ex:
-            self.page.snack_bar = ft.SnackBar(
-                content=ft.Text(f"⚠️ No se pudieron cargar las métricas: {str(ex)}"),
-                bgcolor="red"
+            snack_err = ft.SnackBar(
+                content=ft.Text(f"⚠️ No se pudieron cargar las métricas: {str(ex)}", color="white"),
+                bgcolor="#E74C3C"
             )
-            self.page.snack_bar.open = True
+            self.page.snack_bar = snack_err
+            snack_err.open = True
             self.page.update()
+
+    def _close_dialog_mobile(self, dialog):
+        """Helper para cerrar el diálogo de forma segura asegurando el refresco de pantalla."""
+        dialog.open = False
+        self.page.update()
