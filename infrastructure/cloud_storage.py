@@ -26,10 +26,14 @@ class LocalFirstTaskRepository(ITaskRepository):
             req.data = data
             req.add_header('Content-Type', 'application/json')
         
-        with urllib.request.urlopen(req, context=self.ssl_context, timeout=4) as response:
-            if method == 'GET':
+        try:
+            # Añadimos un timeout estricto de 3 segundos para evitar bloqueos del hilo principal
+            with urllib.request.urlopen(req, context=self.ssl_context, timeout=3) as response:
                 return json.loads(response.read().decode('utf-8'))
-        return None
+        except Exception as e:
+            # Retornamos None de inmediato si la red corporativa rechaza el tráfico o altera el SSL
+            # De esta manera la app opera con resiliencia Local-First usando el JSON local sin inmutarse
+            return None
 
     def _sync_pending_operations(self) -> bool:
         """Intenta vaciar la cola local de cambios hacia Firebase. Devuelve True si hubo éxito de red."""

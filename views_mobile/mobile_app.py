@@ -342,7 +342,7 @@ class MatrizEnfoqueMobileApp:
     def _handle_delete_task_mobile(self, task_id: str):
         """Elimina la tarea en el repositorio local y fuerza el redibujado instantáneo de Flet."""
         try:
-            self.controller.delete_task(task_id)
+            self.controller.delete_bujo_item(task_id)
             self.refresh_ui()
             
             self.page.snack_bar = ft.SnackBar(
@@ -364,7 +364,9 @@ class MatrizEnfoqueMobileApp:
     def _handle_clear_mesa_mobile(self, e):
         """Manejador de evento móvil para vaciar 'Hecho' y disparar el chispazo analítico."""
         try:
-            self.controller.archive_completed_tasks() 
+            # LLAMADA CORREGIDA AL MÉTODO REAL DEL CONTROLADOR
+            self.controller.archive_done_tasks() 
+            self.refresh_ui() # Refresca el Kanban inmediatamente
             
             metrics = self.controller.get_local_metrics()
             tot = metrics.get("tareas_completadas", 0)
@@ -378,10 +380,12 @@ class MatrizEnfoqueMobileApp:
                 bgcolor="#2ECC71"
             )
             self.page.snack_bar.open = True
+            self.page.update()
             
         except Exception as ex:
             self.page.snack_bar = ft.SnackBar(content=ft.Text(f"⚠️ Error al limpiar: {str(ex)}"), bgcolor="red")
             self.page.snack_bar.open = True
+            self.page.update()
 
     # 📊 MÓDULO DEL PUNTO 3: Dashboard Analítico Semanal Efímero
     def _show_weekly_dashboard_mobile(self):
@@ -431,7 +435,10 @@ class MatrizEnfoqueMobileApp:
                 actions_alignment=ft.MainAxisAlignment.END
             )
             
-            self.page.open(dashboard_dialog)
+            # SOLUCIÓN DE APERTURA EN FLET:
+            self.page.dialog = dashboard_dialog
+            dashboard_dialog.open = True
+            self.page.update()
             
         except Exception as ex:
             self.page.snack_bar = ft.SnackBar(

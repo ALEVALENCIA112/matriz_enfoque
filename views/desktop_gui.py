@@ -103,6 +103,20 @@ class DesktopGUI:
         btn_reset = ttk.Button(pomodoro_frame, text="🔄 Reiniciar", command=self.controller.reset_pomodoro)
         btn_reset.pack(side="left", padx=5)
 
+        # Botón de Métricas Efímeras en Escritorio (Tkinter)
+        btn_metrics = tk.Button(
+            pomodoro_frame,
+            text="📊 Ver Rendimiento",
+            font=("Segoe UI", 9, "bold"),
+            bg="#3498DB",
+            fg="white",
+            bd=0,
+            padx=10,
+            pady=5,
+            command=self._show_metrics_desktop
+        )
+        btn_metrics.pack(side="right", padx=10) # Ajústalo según tu layout (.grid o .pack)
+
         # --- CONTENEDOR INTERMEDIO: CAPTURA RÁPIDA BUJO ---
         capture_frame = ttk.LabelFrame(self.root, text=" 📝 Captura Rápida Bullet Journal ", padding=10)
         capture_frame.pack(fill="x", padx=20, pady=5)
@@ -242,6 +256,24 @@ class DesktopGUI:
         """Ciclo asíncrono controlado por el loop de tkinter para actualizar el reloj cada segundo."""
         self.controller.update_timer()
         self.root.after(1000, self._start_ui_timer_loop)
+
+    def _show_metrics_desktop(self):
+        """Muestra el panel analítico efímero en la versión de escritorio."""
+        try:
+            metrics = self.controller.get_local_metrics()
+            tot = metrics.get("tareas_completadas", 0)
+            ac = metrics.get("actividades_clave_completadas", 0)
+            
+            mensaje = (
+                f"📈 MÉTRICAS DE RENDIMIENTO ACUMULADAS:\n\n"
+                f"• Histórico Total: {tot} tareas finalizadas.\n"
+                f"• Actividades Clave (✓): {ac} completadas con éxito.\n\n"
+                f"💡 Este panel es efímero. Al limpiar la mesa se enfoca en "
+                f"refrescar tu perspectiva sin sobrecarga visual."
+            )
+            messagebox.showinfo("Enfoque Semanal", mensaje)
+        except Exception as e:
+            messagebox.showerror("⚠️ Error", f"No se pudieron cargar las métricas: {e}")
 
     def run(self):
         self.root.mainloop()
