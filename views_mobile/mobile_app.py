@@ -231,23 +231,54 @@ class MatrizEnfoqueMobileApp:
             pass
 
     def refresh_pomodoro(self, phase, seconds_left):
+        """Actualiza de forma reactiva el reloj en la APK e induce el Cierre Feynman."""
         minutes = seconds_left // 60
         seconds = seconds_left % 60
+        
+        # Actualizar el valor del reloj en formato MM:SS
         self.lbl_pomo_timer.value = f"{minutes:02d}:{seconds:02d}"
         self.lbl_pomo_phase.value = f"Fase: {phase}"
         
+        # Cambios de estado visuales y lógicos según la fase del Pomodoro Inverso
         if phase == "Descanso":
-            self.lbl_pomo_timer.color = ft.Colors.GREEN
-            self.lbl_pomo_phase.value = "Fase: ¡Descanso! (Aplica Cierre Feynman 🗣️)"
+            self.lbl_pomo_timer.color = "orange_600"  # Tono fuego amigable de advertencia
+            self.lbl_pomo_phase.value = "Fase: ¡Descanso Feynman! 🗣️"
+            self.lbl_pomo_phase.color = "orange_700"
+            
+            # Lanzar un recordatorio visual táctil interactivo justo al iniciar el descanso (minuto 10:00)
+            if minutes == 10 and seconds == 0:
+                snack_feynman = ft.SnackBar(
+                    content=ft.Text(
+                        "🧠 Cierre Feynman: Explica lo que acabas de programar usando palabras ultra-simples.",
+                        color="white",
+                        size=12
+                    ),
+                    bgcolor="#D35400",  # Color descriptivo para el descanso activo
+                    duration=6000
+                )
+                self.page.snack_bar = snack_feynman
+                snack_feynman.open = True
+                
         elif phase == "Enfoque":
-            self.lbl_pomo_timer.color = self.colors["accent_ac"]
+            self.lbl_pomo_timer.color = self.colors["accent_ac"]  # Rojo enfoque
+            self.lbl_pomo_phase.color = "black"
+            self.lbl_pomo_phase.value = "Fase: Enfoque Absolute 🎯"
+            
+        elif phase == "Arranque":
+            self.lbl_pomo_timer.color = self.colors["primary"]    # Azul arranque
+            self.lbl_pomo_phase.color = "black"
+            self.lbl_pomo_phase.value = "Fase: Arranque / Preparación 🚀"
+            
         else:
             self.lbl_pomo_timer.color = self.colors["primary"]
-            
+            self.lbl_pomo_phase.color = "black"
+
+        # 🚨 CRÍTICO EN MÓVIL: Forzar actualización segura del árbol gráfico
         try:
             self.page.update()
         except Exception:
             pass
+
 
     def _render_task_item(self, task):
         """Genera dinámicamente las tarjetas adaptativas en Flet Móvil."""
@@ -440,7 +471,7 @@ class MatrizEnfoqueMobileApp:
                     padding=5
                 ),
                 actions=[
-                    ft.TextButton("Entendido", on_click=lambda e: self.page.close(dashboard_dialog))
+                    ft.TextButton("Entendido", on_click=lambda e: self._close_dialog_mobile(dashboard_dialog))
                 ],
                 actions_alignment=ft.MainAxisAlignment.END
             )

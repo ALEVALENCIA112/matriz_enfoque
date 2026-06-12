@@ -240,17 +240,33 @@ class DesktopGUI:
         minutes = seconds_left // 60
         seconds = seconds_left % 60
         self.lbl_timer.configure(text=f"{minutes:02d}:{seconds:02d}")
-        self.lbl_phase.configure(text=f"Fase: {phase}")
         
-        # Cambiar el color de fondo para alertar visualmente la transición de estados sin sonar alarmas estresantes
+        # 1. Comportamiento especial si entramos en la fase de Descanso
         if phase == "Descanso":
             self.lbl_timer.configure(foreground=self.colors["break_phase"])
-            # Recordatorio implícito en pantalla de tu técnica para el descanso
-            self.lbl_phase.configure(text="Fase: ¡Descanso! (Aplica Cierre Feynman 🗣️)")
+            self.lbl_phase.configure(
+                text="Fase: ¡Descanso Activo! 🗣️\n¿Cómo le explicarías lo que hiciste a un niño?",
+                font=("Segoe UI", 11, "italic"),
+                foreground="#D35400"
+            )
+            
+            # Mostrar una alerta de Tkinter no bloqueante la primera vez que cambia a descanso
+            if minutes == 10 and seconds == 0:
+                messagebox.showinfo(
+                    "🧠 Cierre Feynman", 
+                    "¡Hora de desconectar! Tómate 2 minutos para resumir lo aprendido "
+                    "con palabras ultra-simples antes de levantarte de la silla."
+                )
+                
         elif phase == "Enfoque":
             self.lbl_timer.configure(foreground=self.colors["accent_ac"])
+            self.lbl_phase.configure(text="Fase: Enfoque Absoluto 🎯", font=("Segoe UI", 10, "bold"), foreground=self.colors["text"])
+        elif phase == "Arranque":
+            self.lbl_timer.configure(foreground=self.colors["primary"])
+            self.lbl_phase.configure(text="Fase: Arranque/Preparación 🚀", font=("Segoe UI", 10, "normal"), foreground=self.colors["text"])
         else:
             self.lbl_timer.configure(foreground=self.colors["primary"])
+            self.lbl_phase.configure(text=f"Fase: {phase}", font=("Segoe UI", 10, "normal"), foreground=self.colors["text"])
 
     def _start_ui_timer_loop(self):
         """Ciclo asíncrono controlado por el loop de tkinter para actualizar el reloj cada segundo."""
