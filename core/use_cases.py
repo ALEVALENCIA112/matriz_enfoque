@@ -54,9 +54,9 @@ class KanbanManager:
         # Filtramos para quitar de la visualización las que el usuario ya limpió de la mesa
         filtered_tasks = [t for t in all_tasks if t.column == column and not getattr(t, 'is_archived', False)]
 
-        # Si la columna es 'Por Hacer', forzamos a que la KEY_ACTIVITY ('✓') flote a la cima del todo
+        # Si la columna es 'Por Hacer', forzamos a que la KEY_ACTIVITY ('✓') flote a la cima y luego prioritarias (*)
         if column == KanbanColumn.TO_DO:
-            filtered_tasks = sorted(filtered_tasks, key=lambda t: t.symbol != BuJoSymbol.KEY_ACTIVITY)
+            filtered_tasks = sorted(filtered_tasks, key=lambda t: (t.symbol != BuJoSymbol.KEY_ACTIVITY, not getattr(t, 'is_starred', False)))
             
         return filtered_tasks
     
@@ -67,8 +67,7 @@ class KanbanManager:
         tareas_a_archivar_conteo = 0
         claves_a_archivar_conteo = 0
         
-        # 📊 PUNTO 3: Dashboard Analítico Semanal Efímero (Métricas Locales)
-        # Contabilizamos antes de mutar el estado físico del JSON
+        # 📊 Contabilizamos antes de archivar
         for task in all_tasks:
             if task.column == KanbanColumn.DONE and not getattr(task, 'is_archived', False):
                 tareas_a_archivar_conteo += 1
@@ -76,28 +75,10 @@ class KanbanManager:
                     claves_a_archivar_conteo += 1
         
         if tareas_a_archivar_conteo > 0:
-            try:
-                local_storage = getattr(self.repository, 'local_repo', None)
-                if local_storage and hasattr(local_storage, 'filepath'):
-                    filepath = local_storage.filepath
-                    try:
-                        with open(filepath, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                    except Exception:
-                        data = {}
-                        
-                    if "historico_metricas" not in data:
-                        data["historico_metricas"] = {"tareas_completadas": 0, "actividades_clave_completadas": 0}
-                        
-                    data["historico_metricas"]["tareas_completadas"] += tareas_a_archivar_conteo
-                    data["historico_metricas"]["actividades_clave_completadas"] += claves_a_archivar_conteo
-                    
-                    with open(filepath, 'w', encoding='utf-8') as f:
-                        json.dump(data, f, indent=4, ensure_ascii=False)
-            except Exception as e:
-                print(f"⚠️ Error al procesar métricas locales efímeras: {e}")
+            if hasattr(self.repository, 'increment_metrics'):
+                self.repository.increment_metrics(tareas_a_archivar_conteo, claves_a_archivar_conteo)
 
-        # Ejecutamos el marcado de archivado que persistirá de forma híbrida
+        # Marcado de archivado persistente
         for task in all_tasks:
             if task.column == KanbanColumn.DONE and not getattr(task, 'is_archived', False):
                 task.is_archived = True

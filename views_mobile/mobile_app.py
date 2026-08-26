@@ -1,9 +1,39 @@
+# views_mobile/mobile_app.py
 import flet as ft
 import asyncio
 from core.entities import KanbanColumn, BuJoSymbol
 
 
+def get_center_alignment():
+    """Retorna alineación central universal para todas las versiones de Flet."""
+    return ft.Alignment(0, 0)
+
+
+def create_card_border(color: str = "#E74C3C", width: float = 1.5):
+    """Genera un borde adaptativo compatible con Flet moderno y clásico."""
+    try:
+        if hasattr(ft, "Border") and hasattr(ft.Border, "all"):
+            return ft.Border.all(width=width, color=color)
+        if hasattr(ft, "border") and hasattr(ft.border, "all"):
+            return ft.border.all(color=color, width=width)
+    except Exception:
+        pass
+    try:
+        return ft.Border(
+            top=ft.BorderSide(width, color),
+            right=ft.BorderSide(width, color),
+            bottom=ft.BorderSide(width, color),
+            left=ft.BorderSide(width, color)
+        )
+    except Exception:
+        return None
+
+
 class MatrizEnfoqueMobileApp:
+    """
+    Vista Móvil (Flet APK - Android / Multiplataforma).
+    Diseño adaptativo táctil con soporte 100% Local-First y tolerancia a desconexión.
+    """
 
     VERSION = "1.0.4"
     COPYRIGHT = "© 2026 CRAV - Todos los derechos reservados"
@@ -19,57 +49,69 @@ class MatrizEnfoqueMobileApp:
             "accent_ac": "#E74C3C",  
             "accent_ae": "#F39C12",  
             "accent_d": "#9B59B6",   
-            "scheduled": "#3498DB"   
+            "scheduled": "#2980B9"   
         }
 
-        self.todo_list = ft.ListView(expand=True, spacing=10, padding=10)
-        self.progress_list = ft.ListView(expand=True, spacing=10, padding=10)
-        self.done_list_view = ft.ListView(expand=True, spacing=10, padding=10)
+        # Contenedores de listas para cada columna
+        self.todo_list = ft.ListView(expand=True, spacing=8, padding=10)
+        self.progress_list = ft.ListView(expand=True, spacing=8, padding=10)
+        self.done_list_view = ft.ListView(expand=True, spacing=8, padding=10)
 
-        # Botón para limpiar mesa en lote desde el celular
+        # Botón para limpiar mesa en columna Hecho
         self.btn_clear_done_mobile = ft.ElevatedButton(
-            content=ft.Text("🧹 Limpiar Mesa", color="white"),
-            icon=ft.Icons.CLEANING_SERVICES,
+            content=ft.Row(
+                [
+                    ft.Icon(ft.Icons.CLEANING_SERVICES, size=18, color=ft.Colors.WHITE),
+                    ft.Text("Limpiar Mesa", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD)
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                tight=True
+            ),
             bgcolor="#E74C3C",
             on_click=self._handle_clear_mesa_mobile
         )
 
-        # Empaquetamos el botón arriba y las tarjetas abajo
         self.done_list = ft.Column(
             expand=True,
             controls=[
-                ft.Container(content=self.btn_clear_done_mobile, padding=ft.Padding(top=10, left=10, right=10, bottom=0)),
+                ft.Container(
+                    content=self.btn_clear_done_mobile, 
+                    padding=ft.Padding(top=10, left=12, right=12, bottom=4),
+                    alignment=get_center_alignment()
+                ),
                 self.done_list_view
             ]
         )
 
-        # Campo de entrada de texto
+        # Campo de entrada de texto con soporte para Enter / Teclado móvil
         self.txt_new_task = ft.TextField(
-            label="Nueva Entrada Rápida...",
+            hint_text="Nueva tarea / nota rápida...",
             expand=True,
             border_color=self.colors["primary"],
-            text_size=14
+            text_size=13,
+            dense=True,
+            on_submit=self._add_task_from_mobile
         )
 
-        # 🎯 DROPDOWN INTEGRAL CON TODOS LOS SÍMBOLOS DISPONIBLES EN DOMINIO
+        # Dropdown con la nomenclatura BuJo completa
         self.dropdown_symbol = ft.Dropdown(
-            width=100,
+            width=115,
             hint_text="Tipo",
             border_color=self.colors["primary"],
+            dense=True,
+            text_size=12,
             options=[
-                # Clásicos
                 ft.dropdown.Option(BuJoSymbol.TASK_PENDING.value, "• Tarea"),
+                ft.dropdown.Option(BuJoSymbol.KEY_ACTIVITY.value, "✓ Clave"),
+                ft.dropdown.Option(BuJoSymbol.AVOIDED_ACTIVITY.value, "// Evitado"),
+                ft.dropdown.Option(BuJoSymbol.DECISION.value, "D Decisión"),
                 ft.dropdown.Option(BuJoSymbol.NOTE.value, "— Nota"),
                 ft.dropdown.Option(BuJoSymbol.EVENT.value, "○ Evento"),
                 ft.dropdown.Option(BuJoSymbol.SCHEDULED_TASK.value, "< Programada"),
                 ft.dropdown.Option(BuJoSymbol.TASK_MIGRATED.value, "> Migrada"),
                 ft.dropdown.Option(BuJoSymbol.TASK_COMPLETED.value, "X Hecho"),
-                ft.dropdown.Option(BuJoSymbol.PRIORITY.value, "* Prioridad Alta"),
-                ft.dropdown.Option(BuJoSymbol.INSPIRATION.value, "! Inspiración / Idea"),
-                # Extensiones Neurodivergentes
-                ft.dropdown.Option(BuJoSymbol.KEY_ACTIVITY.value, "✓ Clave"),
-                ft.dropdown.Option(BuJoSymbol.AVOIDED_ACTIVITY.value, "// Evitado"),
-                ft.dropdown.Option(BuJoSymbol.DECISION.value, "D Decisión"),
+                ft.dropdown.Option(BuJoSymbol.PRIORITY.value, "* Prioridad"),
+                ft.dropdown.Option(BuJoSymbol.INSPIRATION.value, "! Idea"),
             ],
             value=BuJoSymbol.TASK_PENDING.value  
         )
@@ -80,25 +122,44 @@ class MatrizEnfoqueMobileApp:
             on_pomodoro_tick=self.refresh_pomodoro
         )
 
-        # ⏰ HILO DE FONDO CONTROLADO PARA EL RELOJ POMODORO
+        # Hilo de fondo del reloj
         self.clock_running = True
         self.page.run_task(self._mobile_clock_loop)
 
-        # Construir y montar la UI físicamente en la página
+        # Construir UI
         self.build_ui()
 
+    def _show_snackbar(self, message: str, color: str = "#2ECC71"):
+        """Muestra un SnackBar compatible con todas las versiones de Flet."""
+        snack = ft.SnackBar(
+            content=ft.Text(message, color=ft.Colors.WHITE, size=13),
+            bgcolor=color,
+            duration=3500
+        )
+        if hasattr(self.page, "open"):
+            self.page.open(snack)
+        else:
+            self.page.snack_bar = snack
+            snack.open = True
+            self.page.update()
+
     def build_ui(self):
-        """Dibuja de forma nativa los componentes móviles en pantalla."""
+        """Monta los componentes móviles de la interfaz."""
         self.app_bar = ft.AppBar(
-            title=ft.Text("🎯 Matriz de Enfoque", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+            title=ft.Text("🎯 Matriz de Enfoque", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD, size=18),
             bgcolor=self.colors["primary"],
             center_title=True,
-            # 📊 INTEGRACIÓN DEL PUNTO 3: Botón de analíticas corregido
             actions=[
                 ft.IconButton(
-                    icon=ft.Icons.BAR_CHART, # <-- CAMBIADO AQUÍ (Universal y seguro)
+                    icon=ft.Icons.SYNC,
                     icon_color=ft.Colors.WHITE,
-                    tooltip="Ver Rendimiento Semanal",
+                    tooltip="Sincronizar",
+                    on_click=lambda _: self._handle_manual_sync_mobile()
+                ),
+                ft.IconButton(
+                    icon=ft.Icons.BAR_CHART,
+                    icon_color=ft.Colors.WHITE,
+                    tooltip="Rendimiento Semanal",
                     on_click=lambda _: self._show_weekly_dashboard_mobile()
                 )
             ]
@@ -106,28 +167,33 @@ class MatrizEnfoqueMobileApp:
         self.page.appbar = self.app_bar
 
         # --- SECCIÓN POMODORO ---
-        self.lbl_pomo_phase = ft.Text("Fase: Arranque", italic=True, size=14)
+        self.lbl_pomo_phase = ft.Text("Fase: Arranque", italic=True, size=13)
         
         mins = self.controller.pomodoro.current_time_left // 60
         secs = self.controller.pomodoro.current_time_left % 60
-        self.lbl_pomo_timer = ft.Text(f"{mins:02d}:{secs:02d}", size=32, weight=ft.FontWeight.BOLD, color=self.colors["primary"])
+        self.lbl_pomo_timer = ft.Text(
+            f"{mins:02d}:{secs:02d}", 
+            size=28, 
+            weight=ft.FontWeight.BOLD, 
+            color=self.colors["primary"]
+        )
 
         pomodoro_card = ft.Card(
             content=ft.Container(
                 content=ft.Column([
                     ft.Row([self.lbl_pomo_phase, self.lbl_pomo_timer], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                     ft.Row([
-                        ft.IconButton(icon=ft.Icons.PLAY_ARROW, on_click=lambda _: self.controller.start_pomodoro()),
-                        ft.IconButton(icon=ft.Icons.PAUSE, on_click=lambda _: self.controller.pause_pomodoro()),
-                        ft.IconButton(icon=ft.Icons.REFRESH, on_click=lambda _: self.controller.reset_pomodoro()),
-                    ], alignment=ft.MainAxisAlignment.CENTER)
-                ]),
-                padding=15
+                        ft.IconButton(icon=ft.Icons.PLAY_ARROW, icon_color=self.colors["primary"], on_click=lambda _: self.controller.start_pomodoro()),
+                        ft.IconButton(icon=ft.Icons.PAUSE, icon_color="#E67E22", on_click=lambda _: self.controller.pause_pomodoro()),
+                        ft.IconButton(icon=ft.Icons.REFRESH, icon_color="grey", on_click=lambda _: self.controller.reset_pomodoro()),
+                    ], alignment=ft.MainAxisAlignment.CENTER, spacing=15)
+                ], spacing=4),
+                padding=12
             ),
-            margin=10
+            margin=ft.Margin(left=10, top=6, right=10, bottom=4)
         )
 
-        # --- SECCIÓN ADICIÓN ---
+        # --- SECCIÓN ENTRADA RÁPIDA ---
         input_row = ft.Container(
             content=ft.Row([
                 self.dropdown_symbol,
@@ -135,17 +201,18 @@ class MatrizEnfoqueMobileApp:
                 ft.IconButton(
                     icon=ft.Icons.ADD_CIRCLE,
                     icon_color=self.colors["primary"],
-                    icon_size=36,
+                    icon_size=32,
+                    tooltip="Agregar entrada",
                     on_click=self._add_task_from_mobile
                 )
-            ]),
-            padding=10
+            ], spacing=6),
+            padding=ft.Padding(left=10, top=4, right=10, bottom=4)
         )
 
-        # Layout dinámico
+        # Layout dinámico para navegación de columnas
         self.column_container = ft.Container(content=self.todo_list, expand=True)
 
-        # Barra inferior de pestañas
+        # Barra inferior de pestañas (NavigationBar)
         self.page.navigation_bar = ft.NavigationBar(
             selected_index=0,
             on_change=self._on_nav_change,
@@ -161,18 +228,18 @@ class MatrizEnfoqueMobileApp:
                 pomodoro_card,
                 input_row,          
                 self.column_container,
-                # --- BARRA DE CRÉDITOS Y VERSIÓN GLOBAL MÓVIL ---
+                # Pie de versión
                 ft.Container(
                     content=ft.Text(
                         value=f"Versión {self.VERSION}  •  {self.COPYRIGHT}",
-                        size=10,
+                        size=9,
                         color=ft.Colors.GREY_500,
-                        weight=ft.FontWeight.W_300,
                         text_align=ft.TextAlign.CENTER,
                     ),
-                    padding=ft.Padding(left=10, top=4, right=10, bottom=4)
+                    padding=ft.Padding(left=10, top=2, right=10, bottom=4),
+                    alignment=get_center_alignment()
                 )
-            ], expand=True)
+            ], expand=True, spacing=2)
         )
         
         self.refresh_ui()
@@ -193,28 +260,33 @@ class MatrizEnfoqueMobileApp:
             return
         
         try:
-            chosen_sym = BuJoSymbol(self.dropdown_symbol.value)
-            self.controller.add_bujo_item(title, chosen_sym)
-            self.txt_new_task.value = ""
-            self.page.update()
-        except ValueError as ex:
-            self.page.snack_bar = ft.SnackBar(content=ft.Text(str(ex)), bgcolor="#E74C3C")
-            self.page.snack_bar.open = True
-            self.page.update()
+            chosen_sym = BuJoSymbol.TASK_PENDING
+            for s in BuJoSymbol:
+                if s.value == self.dropdown_symbol.value:
+                    chosen_sym = s
+                    break
+
+            error_msg = self.controller.add_bujo_item(title, chosen_sym)
+            if error_msg:
+                self._show_snackbar(error_msg, color="#E74C3C")
+            else:
+                self.txt_new_task.value = ""
+                self.page.update()
+        except Exception as ex:
+            self._show_snackbar(str(ex), color="#E74C3C")
 
     async def _mobile_clock_loop(self):
-        """Bucle asíncrono no bloqueante coordinado con el renderizador de Flet."""
+        """Bucle asíncrono no bloqueante coordinado con Flet."""
         while self.clock_running:
             self.controller.update_timer()
             await asyncio.sleep(1)
 
     def refresh_ui(self):
-        # 1. Vaciado absoluto de los buffers de listas de Flet
+        """Redibuja de forma limpia e instantánea las tarjetas en la pantalla móvil."""
         self.todo_list.controls.clear()
         self.progress_list.controls.clear()
         self.done_list_view.controls.clear()
 
-        # 2. Re-inyección limpia desde el controlador compartido
         for task in self.controller.get_column_content(KanbanColumn.TO_DO):
             self.todo_list.controls.append(self._render_task_item(task))
             
@@ -224,73 +296,56 @@ class MatrizEnfoqueMobileApp:
         for task in self.controller.get_column_content(KanbanColumn.DONE):
             self.done_list_view.controls.append(self._render_task_item(task))
 
-        # 3. Forzar actualización del árbol de componentes en la pantalla
         try:
             self.page.update()
         except Exception:
             pass
 
     def refresh_pomodoro(self, phase, seconds_left):
-        """Actualiza de forma reactiva el reloj en la APK e induce el Cierre Feynman."""
+        """Actualiza reactivamente el reloj en el APK."""
         minutes = seconds_left // 60
         seconds = seconds_left % 60
         
-        # Actualizar el valor del reloj en formato MM:SS
         self.lbl_pomo_timer.value = f"{minutes:02d}:{seconds:02d}"
         self.lbl_pomo_phase.value = f"Fase: {phase}"
         
-        # Cambios de estado visuales y lógicos según la fase del Pomodoro Inverso
         if phase == "Descanso":
-            self.lbl_pomo_timer.color = "orange_600"  # Tono fuego amigable de advertencia
+            self.lbl_pomo_timer.color = "#E67E22"
             self.lbl_pomo_phase.value = "Fase: ¡Descanso Feynman! 🗣️"
-            self.lbl_pomo_phase.color = "orange_700"
+            self.lbl_pomo_phase.color = "#D35400"
             
-            # Lanzar un recordatorio visual táctil interactivo justo al iniciar el descanso (minuto 10:00)
             if minutes == 10 and seconds == 0:
-                snack_feynman = ft.SnackBar(
-                    content=ft.Text(
-                        "🧠 Cierre Feynman: Explica lo que acabas de programar usando palabras ultra-simples.",
-                        color="white",
-                        size=12
-                    ),
-                    bgcolor="#D35400",  # Color descriptivo para el descanso activo
-                    duration=6000
+                self._show_snackbar(
+                    "🧠 Cierre Feynman: Resume lo avanzado con palabras ultra-simples antes de descansar.",
+                    color="#D35400"
                 )
-                self.page.snack_bar = snack_feynman
-                snack_feynman.open = True
-                
         elif phase == "Enfoque":
-            self.lbl_pomo_timer.color = self.colors["accent_ac"]  # Rojo enfoque
+            self.lbl_pomo_timer.color = self.colors["accent_ac"]
             self.lbl_pomo_phase.color = "black"
-            self.lbl_pomo_phase.value = "Fase: Enfoque Absolute 🎯"
-            
+            self.lbl_pomo_phase.value = "Fase: Enfoque Absoluto 🎯"
         elif phase == "Arranque":
-            self.lbl_pomo_timer.color = self.colors["primary"]    # Azul arranque
+            self.lbl_pomo_timer.color = self.colors["primary"]
             self.lbl_pomo_phase.color = "black"
             self.lbl_pomo_phase.value = "Fase: Arranque / Preparación 🚀"
-            
         else:
             self.lbl_pomo_timer.color = self.colors["primary"]
             self.lbl_pomo_phase.color = "black"
 
-        # 🚨 CRÍTICO EN MÓVIL: Forzar actualización segura del árbol gráfico
         try:
             self.page.update()
         except Exception:
             pass
 
-
     def _render_task_item(self, task):
-        """Genera dinámicamente las tarjetas adaptativas en Flet Móvil."""
-        # Configuración visual adaptativa de la Actividad Clave
+        """Genera dinámicamente las tarjetas táctiles."""
         is_key = (task.symbol == BuJoSymbol.KEY_ACTIVITY)
         bg_card = "#FFF5F5" if is_key else self.colors["card"]
-        border_side = ft.BorderSide(2, self.colors["accent_ac"]) if is_key else None
 
-        # Construcción de strings de estado
         extra_badges = ""
-        if task.is_starred: extra_badges += " ⭐"
-        if task.is_inspired: extra_badges += " 💡"
+        if getattr(task, 'is_starred', False): extra_badges += " ⭐"
+        if getattr(task, 'is_inspired', False): extra_badges += " 💡"
+
+        border_val = create_card_border(self.colors["accent_ac"], 1.5) if is_key else None
 
         return ft.Card(
             content=ft.Container(
@@ -299,198 +354,147 @@ class MatrizEnfoqueMobileApp:
                         ft.Text(
                             f"{task.symbol.value} {task.title}{extra_badges}", 
                             weight=ft.FontWeight.BOLD if is_key else ft.FontWeight.NORMAL,
-                            color=self.colors["accent_ac"] if is_key else "black",
+                            color=self.colors["accent_ac"] if is_key else ft.Colors.BLACK87,
+                            size=14,
                             expand=True
                         )
                     ]),
                     ft.Row([
-                        # Botones de Modificadores Contextuales
-                        # Botón de Estrella (Prioridad)
+                        # Estrella (Prioridad)
                         ft.IconButton(
-                            icon=ft.Icons.STAR if task.is_starred else ft.Icons.STAR_BORDER,
-                            icon_color="amber" if task.is_starred else "grey",
+                            icon=ft.Icons.STAR if getattr(task, 'is_starred', False) else ft.Icons.STAR_BORDER,
+                            icon_color="amber" if getattr(task, 'is_starred', False) else "grey",
                             icon_size=18,
                             tooltip="Prioridad",
                             on_click=lambda e, tid=task.id: self.controller.toggle_item_priority(tid)
                         ),
-                        # Botón de Idea (Inspiración)
+                        # Bombillo (Inspiración)
                         ft.IconButton(
-                            icon=ft.Icons.LIGHTBULB if task.is_inspired else ft.Icons.LIGHTBULB_OUTLINE,
-                            icon_color="orange" if task.is_inspired else "grey",
+                            icon=ft.Icons.LIGHTBULB if getattr(task, 'is_inspired', False) else ft.Icons.LIGHTBULB_OUTLINE,
+                            icon_color="orange" if getattr(task, 'is_inspired', False) else "grey",
                             icon_size=18,
                             tooltip="Inspiración",
                             on_click=lambda e, tid=task.id: self.controller.toggle_item_inspiration(tid)
                         ),
-                        
-                        # 🗑️ LLAMADA SEGURA AL MÉTODO DE BORRADO INDIVIDUAL
+                        # Borrar
                         ft.IconButton(
                             icon=ft.Icons.DELETE_OUTLINE,
                             icon_color=ft.Colors.RED_400,
                             icon_size=18,
-                            tooltip="Eliminar tarea",
+                            tooltip="Eliminar",
                             on_click=lambda _, tid=task.id: self._handle_delete_task_mobile(tid)
                         ),
-                                                                     
-                        ft.VerticalDivider(),
+                        ft.Container(width=10),
                         # Flechas de navegación espacial
                         ft.IconButton(
                             icon=ft.Icons.ARROW_BACK, 
-                            icon_size=16, 
+                            icon_size=18, 
                             disabled=(task.column == KanbanColumn.TO_DO),
-                            on_click=lambda _: self._move_task_left(task)
+                            on_click=lambda _, t=task: self._move_task_left(t)
                         ),
                         ft.IconButton(
                             icon=ft.Icons.ARROW_FORWARD, 
-                            icon_size=16, 
+                            icon_size=18, 
                             disabled=(task.column == KanbanColumn.DONE),
-                            on_click=lambda _: self._move_task_right(task)
+                            on_click=lambda _, t=task: self._move_task_right(t)
                         ),
                     ], alignment=ft.MainAxisAlignment.END, spacing=0)
-                ]),
+                ], spacing=4),
                 padding=10,
                 bgcolor=bg_card,
-                border=ft.border.all(color=self.colors["accent_ac"], width=1) if is_key else None,
+                border=border_val,
                 border_radius=8
-            )
+            ),
+            margin=ft.Margin(left=4, top=2, right=4, bottom=4)
         )
-
-    def _toggle_priority(self, tid):
-        self.controller.toggle_item_priority(tid)
-
-    def _toggle_inspiration(self, tid):
-        self.controller.toggle_item_inspiration(tid)
 
     def _move_task_left(self, task):
         prev_col = KanbanColumn.TO_DO if task.column == KanbanColumn.IN_PROGRESS else KanbanColumn.IN_PROGRESS
         self.controller.move_bujo_item(task.id, prev_col)
-        self.refresh_ui()
 
     def _move_task_right(self, task):
         next_col = KanbanColumn.DONE if task.column == KanbanColumn.IN_PROGRESS else KanbanColumn.IN_PROGRESS
         self.controller.move_bujo_item(task.id, next_col)
-        self.refresh_ui()
 
     def _handle_delete_task_mobile(self, task_id: str):
-        """Elimina la tarea en el repositorio local y fuerza el redibujado instantáneo de Flet."""
         try:
             self.controller.delete_bujo_item(task_id)
-            self.refresh_ui()
-            
-            self.page.snack_bar = ft.SnackBar(
-                content=ft.Text("🗑️ Tarea eliminada correctamente."),
-                bgcolor="#34495E",
-                duration=2000
-            )
-            self.page.snack_bar.open = True
-            self.page.update()
-            
+            self._show_snackbar("🗑️ Tarea eliminada.", color="#34495E")
         except Exception as ex:
-            self.page.snack_bar = ft.SnackBar(
-                content=ft.Text(f"⚠️ Error al borrar: {str(ex)}"), 
-                bgcolor="red"
-            )
-            self.page.snack_bar.open = True
-            self.page.update()
+            self._show_snackbar(f"⚠️ Error al borrar: {str(ex)}", color="#E74C3C")
 
     def _handle_clear_mesa_mobile(self, e):
-        """Manejador de evento móvil para vaciar 'Hecho' y disparar el chispazo analítico."""
         try:
-            # 1. Ejecutar acción en el core a través del controlador
-            self.controller.archive_done_tasks() 
-            # 2. Forzar refresco inmediato de las columnas Kanban en la UI
-            self.refresh_ui() # Refresca el Kanban inmediatamente
-            
-            # 3. Consultar las métricas locales consolidadas
+            self.controller.archive_completed_tasks()
             metrics = self.controller.get_local_metrics()
             tot = metrics.get("tareas_completadas", 0)
             ac = metrics.get("actividades_clave_completadas", 0)
             
-            mensaje = f"¡Mesa limpia! Total histórico: {tot} completadas (✓ {ac} Actividades Clave)."
-            
-            # 4. MANERA CORRECTA EN MÓVIL: Re-instanciar y abrir el SnackBar a través de page.show_snack_bar() o asignación directa limpia
-            snack = ft.SnackBar(
-                content=ft.Text(mensaje, color="white", size=13),
-                bgcolor="#2ECC71",
-                duration=4000
-            )
-            self.page.snack_bar = snack
-            snack.open = True
-            # Forzar actualización de la página para que Flet dibuje el SnackBar en el teléfono
-            self.page.update()
-            
+            mensaje = f"¡Mesa limpia! Total histórico: {tot} ({ac} Actividades Clave ✓)."
+            self._show_snackbar(mensaje, color="#2ECC71")
         except Exception as ex:
-            # En caso de error, mostrar alerta roja
-            snack_error = ft.SnackBar(
-                content=ft.Text(f"⚠️ Error al limpiar: {str(ex)}", color="white"),
-                bgcolor="#E74C3C"
-            )
-            self.page.snack_bar = snack_error
-            snack_error.open = True
-            self.page.update()
+            self._show_snackbar(f"⚠️ Error al limpiar: {str(ex)}", color="#E74C3C")
 
-    # 📊 MÓDULO DEL PUNTO 3: Dashboard Analítico Semanal Efímero
+    def _handle_manual_sync_mobile(self):
+        self.controller.trigger_sync()
+        self._show_snackbar("🔄 Sincronizando con Firebase en segundo plano...", color="#2980B9")
+
     def _show_weekly_dashboard_mobile(self):
-        """Despliega un diálogo flotante efímero consultando de forma limpia al controlador."""
+        """Despliega un diálogo con las métricas acumuladas."""
         try:
-            # Consumimos de forma segura el diccionario de métricas crudas desde la lógica de negocio
             metrics = self.controller.get_local_metrics()
-            
-            # Mapeamos con total correspondencia con los campos usados en _handle_clear_mesa_mobile
             tot = metrics.get("tareas_completadas", 0)
             ac = metrics.get("actividades_clave_completadas", 0)
             
-            # Puedes usar contadores de tareas pendientes si los tienes mapeados, o inferirlos de los controles activos
             dashboard_dialog = ft.AlertDialog(
                 title=ft.Row([
                     ft.Icon(ft.Icons.AUTO_AWESOME, color="amber"),
-                    ft.Text("Enfoque Semanal", size=18, weight=ft.FontWeight.BOLD)
-                ], spacing=10),
+                    ft.Text("Enfoque y Métricas", size=17, weight=ft.FontWeight.BOLD)
+                ], spacing=8),
                 content=ft.Container(
                     content=ft.Column([
-                        ft.Text("Métricas de rendimiento acumuladas:", size=13, color="grey_600"),
+                        ft.Text("Rendimiento acumulado en este dispositivo:", size=12, color=ft.Colors.GREY_700),
                         ft.Divider(),
                         ft.Row([
-                            ft.Icon(ft.Icons.CHECK_CIRCLE, color="green_400", size=20),
-                            ft.Text("Histórico Total: ", weight=ft.FontWeight.BOLD),
-                            ft.Text(f"{tot}", size=15, weight=ft.FontWeight.BOLD, color="green")
+                            ft.Icon(ft.Icons.CHECK_CIRCLE, color="green", size=18),
+                            ft.Text("Histórico Total: ", weight=ft.FontWeight.BOLD, size=13),
+                            ft.Text(f"{tot}", size=14, weight=ft.FontWeight.BOLD, color="green")
                         ]),
                         ft.Row([
-                            ft.Icon(ft.Icons.GPP_GOOD, color=self.colors["accent_ac"], size=20),
-                            ft.Text("Actividades Clave ✓: ", weight=ft.FontWeight.BOLD),
-                            ft.Text(f"{ac}", size=15, weight=ft.FontWeight.BOLD, color=self.colors["accent_ac"])
+                            ft.Icon(ft.Icons.VERIFIED, color=self.colors["accent_ac"], size=18),
+                            ft.Text("Actividades Clave ✓: ", weight=ft.FontWeight.BOLD, size=13),
+                            ft.Text(f"{ac}", size=14, weight=ft.FontWeight.BOLD, color=self.colors["accent_ac"])
                         ]),
                         ft.Divider(),
                         ft.Text(
-                            "💡 Este panel es efímero. Al limpiar la mesa se enfoca en refrescar tu perspectiva sin sobrecarga visual.",
-                            size=11,
+                            "💡 Este panel te ayuda a revisar el progreso sin sobrecarga visual en el tablero.",
+                            size=10,
                             italic=True,
-                            color="grey_500"
+                            color=ft.Colors.GREY_600
                         )
-                    ], tight=True, spacing=12),
+                    ], tight=True, spacing=10),
                     width=280,
                     padding=5
                 ),
                 actions=[
-                    ft.TextButton("Entendido", on_click=lambda e: self._close_dialog_mobile(dashboard_dialog))
+                    ft.TextButton("Cerrar", on_click=lambda e: self._close_dialog_mobile(dashboard_dialog))
                 ],
                 actions_alignment=ft.MainAxisAlignment.END
             )
             
-            # MANERA CORRECTA EN MÓVIL: Asignar al árbol jerárquico de la página, abrir y actualizar
-            self.page.dialog = dashboard_dialog
-            dashboard_dialog.open = True
-            self.page.update()
+            if hasattr(self.page, "open"):
+                self.page.open(dashboard_dialog)
+            else:
+                self.page.dialog = dashboard_dialog
+                dashboard_dialog.open = True
+                self.page.update()
             
         except Exception as ex:
-            snack_err = ft.SnackBar(
-                content=ft.Text(f"⚠️ No se pudieron cargar las métricas: {str(ex)}", color="white"),
-                bgcolor="#E74C3C"
-            )
-            self.page.snack_bar = snack_err
-            snack_err.open = True
-            self.page.update()
+            self._show_snackbar(f"⚠️ Error al abrir métricas: {str(ex)}", color="#E74C3C")
 
     def _close_dialog_mobile(self, dialog):
-        """Helper para cerrar el diálogo de forma segura asegurando el refresco de pantalla."""
-        dialog.open = False
-        self.page.update()
+        if hasattr(self.page, "close"):
+            self.page.close(dialog)
+        else:
+            dialog.open = False
+            self.page.update()

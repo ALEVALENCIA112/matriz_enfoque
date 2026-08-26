@@ -1,15 +1,15 @@
 # controllers/main_controller.py
 import uuid
-import json
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Dict
 from core.entities import KanbanColumn, BuJoSymbol, PomodoroInverse, KanbanTask
 from core.use_cases import KanbanManager
+
 
 class MainController:
     """
     Controlador central de la aplicación (MVC).
     Mantiene la alta cohesión delegando las operaciones a los casos de uso del Core
-    y notificando a la Vista mediante Callbacks sin acoplarse a ella.
+    y notificando a la Vista mediante Callbacks reactivos sin acoplarse a ella.
     """
     
     def __init__(self, kanban_manager: KanbanManager):
@@ -20,22 +20,32 @@ class MainController:
         self._on_kanban_changed: Optional[Callable[[], None]] = None
         self._on_pomodoro_tick: Optional[Callable[[str, int], None]] = None
 
+        # Conectar el callback de sincronización de fondo del repositorio con el refresco de UI
+        repo = getattr(self.kanban_manager, 'repository', None)
+        if repo and hasattr(repo, 'set_sync_callback'):
+            repo.set_sync_callback(self._on_remote_sync_completed)
+
     def register_view_callbacks(self, on_kanban_changed: Callable[[], None], 
                                  on_pomodoro_tick: Callable[[str, int], None]) -> None:
         """Permite a la Vista suscribirse a los cambios del Modelo."""
         self._on_kanban_changed = on_kanban_changed
         self._on_pomodoro_tick = on_pomodoro_tick
 
+    def _on_remote_sync_completed(self) -> None:
+        """Notificación disparada por el hilo de sincronización cuando llegan datos de la nube."""
+        self._notify_kanban_change()
+
     # --- Operaciones del Tablero Kanban / BuJo ---
 
     def add_bujo_item(self, title: str, symbol: BuJoSymbol) -> Optional[str]:
         """Crea un nuevo elemento en el tablero usando un identificador único."""
-        if not title.strip():
+        clean_title = title.strip()
+        if not clean_title:
             return "El título no puede estar vacío."
         
         try:
             task_id = str(uuid.uuid4())
-            self.kanban_manager.create_bujo_item(task_id, title, symbol)
+            self.kanban_manager.create_bujo_item(task_id, clean_title, symbol)
             self._notify_kanban_change()
             return None  # Indica éxito
         except ValueError as e:
@@ -76,22 +86,26 @@ class MainController:
         self.kanban_manager.archive_done_tasks()
         self._notify_kanban_change()
 
+    # --- Gestión de Métricas y Estado de Sincronización ---
 
-    def get_local_metrics(self) -> dict:
-        """
-        Retorna las métricas históricas acumuladas en el almacenamiento local de este dispositivo.
-        Firebase permanece en 0 bytes respecto a históricos redundantes.
-        """
-        try:
-            local_storage = getattr(self.kanban_manager.repository, 'local_repo', None)
-            if local_storage and hasattr(local_storage, 'filepath'):
-                with open(local_storage.filepath, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                return data.get("historico_metricas", {"tareas_completadas": 0, "actividades_clave_completadas": 0})
-        except Exception:
-            pass
+    def get_local_metrics(self) -> Dict[str, int]:
+        """Retorna las métricas históricas acumuladas."""
+        repo = getattr(self.kanban_manager, 'repository', None)
+        if repo and hasattr(repo, 'get_metrics'):
+            return repo.get_metrics()
         return {"tareas_completadas": 0, "actividades_clave_completadas": 0}
 
+    def trigger_sync(self) -> None:
+        """Fuerza un intento de sincronización en segundo plano."""
+        repo = getattr(self.kanban_manager, 'repository', None)
+        if repo and hasattr(repo, 'trigger_sync'):
+            repo.trigger_sync()
+
+    def is_online(self) -> bool:
+        repo = getattr(self.kanban_manager, 'repository', None)
+        if repo and hasattr(repo, 'is_online'):
+            return repo.is_online
+        return False
 
     # --- Operaciones del Pomodoro Inverso ---
 
@@ -117,7 +131,6 @@ class MainController:
             self.pomodoro.tick()
             self._notify_pomodoro_tick()
             
-            # Alerta implícita para el cambio de ciclo (fácilmente captable por la UI)
             if self.pomodoro.current_phase == "Terminado":
                 self.pause_pomodoro()
 
@@ -125,8 +138,14 @@ class MainController:
 
     def _notify_kanban_change(self) -> None:
         if self._on_kanban_changed:
-            self._on_kanban_changed()
+            try:
+                self._on_kanban_changed()
+            except Exception:
+                pass
 
     def _notify_pomodoro_tick(self) -> None:
         if self._on_pomodoro_tick:
-            self._on_pomodoro_tick(self.pomodoro.current_phase, self.pomodoro.current_time_left)
+            try:
+                self._on_pomodoro_tick(self.pomodoro.current_phase, self.pomodoro.current_time_left)
+            except Exception:
+                pass

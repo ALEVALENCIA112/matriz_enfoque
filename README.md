@@ -1,42 +1,56 @@
 # Matriz de Enfoque 🎯
 
-Aplicación multiplataforma moderna desarrollada en **Python** utilizando el framework **Flet**, diseñada para optimizar la gestión del tiempo y organización de tareas mediante un enfoque de productividad estructurado.
+Aplicación multiplataforma de alta productividad diseñada en **Python** utilizando **Tkinter** para la suite de escritorio y **Flet (Flutter engine)** para la versión móvil Android (APK), con arquitectura **Local-First** y **Sincronización Asíncrona Híbrida** con Firebase Realtime Database.
 
-## 📦 Arquitectura del Proyecto
-- `main.py`: Lógica y diseño para la versión de Escritorio (PC).
-- `main_mobile.py`: Optimizaciones reactivas para la versión Móvil (Android).
-- `assets/`: Recursos estáticos (imágenes, fuentes, íconos).
+---
+
+## 🏗️ Arquitectura del Sistema
+- **Local-First & Resiliencia en Red Corporativa**: La aplicación opera al 100% de manera local con latencia de 0 ms. En redes empresariales (con firewalls, proxies o inspección SSL), la aplicación nunca se congela y almacena los cambios en el JSON local. Al detectar red libre o datos móviles, sincroniza automáticamente en segundo plano.
+- `main.py`: Punto de entrada para la versión de Escritorio (Windows PC).
+- `main_mobile.py`: Punto de entrada para la versión Móvil (Android APK / Flet).
+- `core/`: Entidades de dominio, transiciones de estado BuJo/Kanban, Pomodoro Inverso y casos de uso.
+- `infrastructure/`: Almacenamiento local atómico y sincronizador híbrido con Firebase.
+- `controllers/`: Controlador central MVC reactivo.
+- `views/`: Interfaz gráfica de escritorio modularizada (Tkinter).
+- `views_mobile/`: Interfaz gráfica táctil y adaptativa para móvil (Flet).
+- `assets/`: Recursos estáticos (íconos `.ico` y `.png`).
+
+---
 
 ## 🛠️ Instrucciones de Compilación (PowerShell)
 
-### 🖥️ Versión de Escritorio (Windows PC)
+### 🖥️ 1. Compilación para Escritorio (Windows `.exe`)
+Para compilar un ejecutable portable independiente:
+
 ```powershell
-`$pythonDir = (py -c "import sys, os; print(os.path.dirname(sys.executable))"); & "`$pythonDir\Scripts\pyinstaller.exe" --noconfirm --onedir --windowed --paths="`$pythonDir" --add-data "assets;assets" main.py
-
-
-### 🖥️ Versión Movil (Android apk)
-py -c "import os, sys; print(os.path.dirname(sys.executable))" > temp_path.txt && set /p PY_DIR=<temp_path.txt && del temp_path.txt && call "%PY_DIR%\Scripts\flet.exe" build apk --module-name main_mobile
-
-
 py -m PyInstaller --noconfirm --onedir --windowed --name="Matriz de Enfoque" --icon="assets/app_icon.ico" --add-data "assets;assets" main.py
+```
 
+El ejecutable resultante se encontrará en la carpeta `dist/Matriz de Enfoque/Matriz de Enfoque.exe`.
 
+---
 
-Se presentaron varios escenarios ya que al desarrollar la app de manera personal, las rutas de onedrive personal causaban conflictos
+### 📱 2. Compilación para Móvil (Android `.apk`)
+Para generar el archivo `.apk` instalable en Android mediante Flet:
 
-Se resolvió de modo que:
-El archivo apk se creó aparte debido a conflictos con las rutas de onedrive
+```powershell
+flet build apk --module-name main_mobile
+```
 
-Mientras que al ocupar la PC del trabajo/oficina, los problemas fueron de certificados SSL por bloqueadores de la red empresarial
+*Nota: Requiere tener configurado Android SDK / Java JDK en el entorno para la compilación nativa.*
 
-Se resolvió de la siguiente manera:
-Nos desconectamos de la red empresarial y gracias a las caracteristicas de la PC pudimos usar datos moviles
+---
 
+## 📋 Registro de Versiones
+- **1.0.0**: Lanzamiento inicial de versiones `.exe` y `.apk`.
+- **1.0.1**: Corrección de conectividad con Firebase y mejoras de creación.
+- **1.0.2**: Manejo de sincronía y estados.
+- **1.0.3**: Agregado botón de limpieza en APK y pie de versión.
+- **1.0.4**:
+  - **Sincronización Asíncrona No Bloqueante**: Eliminación de congelamientos de la UI en redes corporativas con firewall/SSL.
+  - **Arquitectura Local-First Robusta**: Métodos atómicos de persistencia y cola de operaciones pendientes.
+  - **Resolución de Rutas Multiplataforma**: Almacenamiento seguro en Android y Windows.
+  - **Mejoras Visuales y Táctiles**: Redimensionamiento adaptativo en escritorio, soporte de tecla Enter para añadir tareas y compatibilidad con Flet moderno.
 
-Creado y Desarrollado Por Alejandro Valencia
-
-Versión
-1.0.0 Lanzamiento de App .exe y .apk
-1.0.1 Corrección de conectividad con firebase y mejora de creacion
-1.0.2 Mejora en manejo de sincronia
-1.0.3 Agregado borón de limpieza en apk y lbl de versión
+---
+Creado y Desarrollado por **Alejandro Valencia**

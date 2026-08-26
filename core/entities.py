@@ -30,12 +30,12 @@ class KanbanColumn(Enum):
 class KanbanTask:
     """Representa una tarea dentro de la Matriz de Enfoque."""
     
-    def __init__(self, task_id: str, title: str, symbol: BuJoSymbol = BuJoSymbol.TASK_PENDING):
+    def __init__(self, task_id: str, title: str, symbol: BuJoSymbol = BuJoSymbol.TASK_PENDING, created_at: Optional[datetime] = None):
         self.id = task_id
         self.title = title
         self.symbol = symbol  # El símbolo define la naturaleza del elemento BuJo
         self.column = KanbanColumn.TO_DO
-        self.created_at = datetime.now()
+        self.created_at = created_at or datetime.now()
         self.is_starred = False  # Para soporte del significador de prioridad (*)
         self.is_inspired = False # Para soporte del significador de idea (!)
         self.is_archived = False

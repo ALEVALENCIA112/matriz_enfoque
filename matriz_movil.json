@@ -1,74 +1,40 @@
 {
     "tasks": [
         {
-            "id": "05ca23ed-d5d6-4051-a0b7-c19da2e839d2",
-            "title": "Deber estocásticos",
-            "symbol": "//",
-            "column": "Por Hacer",
-            "is_starred": false,
-            "is_inspired": false,
-            "created_at": "2026-06-09T13:04:40.308177",
-            "is_archived": false,
-            "is_deleted_locally": true
-        },
-        {
-            "id": "75af736a-1aea-49e0-879c-1ee64cc3144e",
-            "title": "Compras temu",
-            "symbol": "//",
-            "column": "Hecho",
-            "is_starred": false,
-            "is_inspired": false,
-            "created_at": "2026-06-09T12:23:04.894993",
-            "is_archived": true
-        },
-        {
-            "id": "fec2a692-c33f-4bdf-b213-8039ae20d24b",
-            "title": "Deber comprobacion estocasticos",
-            "symbol": "//",
-            "column": "Hecho",
-            "is_starred": false,
-            "is_inspired": false,
-            "created_at": "2026-06-09T12:45:30.123389",
-            "is_archived": true
-        },
-        {
-            "id": "3b6427d4-42f7-400c-93db-9b36a5475064",
-            "title": "Estudiar",
+            "id": "30d178f0-3c6c-4299-9281-f15f9c44f4d8",
+            "title": "Proyecto de distribuidos",
             "symbol": "•",
             "column": "Por Hacer",
             "is_starred": false,
             "is_inspired": false,
-            "created_at": "2026-06-09T13:18:16.326982",
+            "created_at": "2026-08-26T09:16:09.523692",
             "is_archived": false,
-            "is_deleted_locally": true
+            "is_deleted_locally": false
+        },
+        {
+            "id": "43f65231-5281-4310-914e-8a43ce397003",
+            "title": "crear plan de organización familiar",
+            "symbol": "•",
+            "column": "Por Hacer",
+            "is_starred": false,
+            "is_inspired": false,
+            "created_at": "2026-08-26T09:16:09.525687",
+            "is_archived": false,
+            "is_deleted_locally": false
+        },
+        {
+            "id": "d06eb55e-791c-4986-b2d6-4862cba5ea1e",
+            "title": "responder a inge duchi",
+            "symbol": "•",
+            "column": "Por Hacer",
+            "is_starred": false,
+            "is_inspired": false,
+            "created_at": "2026-08-26T09:16:09.526684",
+            "is_archived": false,
+            "is_deleted_locally": false
         }
     ],
-    "pending_ops": [
-        {
-            "action": "save",
-            "task_id": "75af736a-1aea-49e0-879c-1ee64cc3144e"
-        },
-        {
-            "action": "save",
-            "task_id": "fec2a692-c33f-4bdf-b213-8039ae20d24b"
-        },
-        {
-            "action": "save",
-            "task_id": "05ca23ed-d5d6-4051-a0b7-c19da2e839d2"
-        },
-        {
-            "action": "save",
-            "task_id": "3b6427d4-42f7-400c-93db-9b36a5475064"
-        },
-        {
-            "action": "delete",
-            "task_id": "05ca23ed-d5d6-4051-a0b7-c19da2e839d2"
-        },
-        {
-            "action": "delete",
-            "task_id": "3b6427d4-42f7-400c-93db-9b36a5475064"
-        }
-    ],
+    "pending_ops": [],
     "historico_metricas": {
         "tareas_completadas": 2,
         "actividades_clave_completadas": 0

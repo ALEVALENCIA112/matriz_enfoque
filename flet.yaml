@@ -1,10 +1,10 @@
-﻿android:
+android:
   icon: assets/app_icon.png
 
 app:
   name: Matriz de Enfoque
   package: com.valencia.matrizenfoque
-  version: 1.0.3
+  version: 1.0.4
 
 requirements:
 - requests
